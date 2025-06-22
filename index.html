@@ -56,6 +56,7 @@
       display: none;
       color: #b91c1c;
       font-size: 14px;
+      margin-top: 6px;
     }
     .btn {
       padding: 12px;
@@ -78,43 +79,66 @@
       transform: none;
     }
   </style>
+  <!-- Supabase UMD build -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <div class="container">
     <h1>Enter Your Work Email</h1>
-    <form id="email-form">
+    <form id="email-form" autocomplete="off">
       <input
         type="email"
         id="email"
         class="input-field"
-        placeholder="you@premiere-urgence-lib.org"
         required
+        autocomplete="off"
       />
       <div id="error" class="error-message">
-        Please use your work email ending with <strong>@premiere-urgence-lib.org</strong>
+        Please use your work email
       </div>
       <button type="submit" class="btn">Continue</button>
     </form>
   </div>
 
   <script>
+    // Initialize Supabase client
+    const SUPABASE_URL = 'https://rkdblbnmtzyrapfemswq.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrZGJsYm5tdHp5cmFwZmVtc3dxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1ODQyNTgsImV4cCI6MjA2NjE2MDI1OH0.TY7Ml-S-knKMNQ-HKylGLbpXIu9wHqGAZDHHAq4rRJc';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     const form = document.getElementById('email-form');
     const emailInput = document.getElementById('email');
     const errorDiv = document.getElementById('error');
-    const requiredDomain = '@premiere-urgence-lib.org';
 
-    form.addEventListener('submit', e => {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      errorDiv.style.display = 'none';
       const email = emailInput.value.trim().toLowerCase();
-      if (email.endsWith(requiredDomain)) {
-        // valid → go to ticket submission
-        window.location.href = 'ticket-submission.html';
+
+      if (!email) {
+        errorDiv.textContent = 'Please enter your email address.';
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      // Call the server-side function
+      const { data: allowed, error } = await supabase
+        .rpc('is_domain_allowed', { email });
+
+      if (error) {
+        console.error('Domain check failed:', error);
+        errorDiv.textContent = 'An error occurred. Try again later.';
+        errorDiv.style.display = 'block';
+      } else if (allowed) {
+        // proceed if allowed
+        window.location.href = 'public/ticket-submission.html';
       } else {
-        // invalid → show error
+        errorDiv.textContent = 'Please use your work email';
         errorDiv.style.display = 'block';
       }
     });
 
+    // Clear error on input
     emailInput.addEventListener('input', () => {
       errorDiv.style.display = 'none';
     });
