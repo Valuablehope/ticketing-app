@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Welcome – Ticketing Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(8px);
+      border-radius: 16px;
+      padding: 30px;
+      max-width: 360px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    h1 {
+      margin-bottom: 20px;
+      font-size: 24px;
+      color: #333;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .input-field {
+      padding: 12px 16px;
+      font-size: 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      transition: border-color 0.2s;
+    }
+    .input-field:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    .error-message {
+      display: none;
+      color: #b91c1c;
+      font-size: 14px;
+    }
+    .btn {
+      padding: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      color: white;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(102,126,234,0.3);
+    }
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Enter Your Work Email</h1>
+    <form id="email-form">
+      <input
+        type="email"
+        id="email"
+        class="input-field"
+        placeholder="you@premiere-urgence-lib.org"
+        required
+      />
+      <div id="error" class="error-message">
+        Please use your work email ending with <strong>@premiere-urgence-lib.org</strong>
+      </div>
+      <button type="submit" class="btn">Continue</button>
+    </form>
+  </div>
+
+  <script>
+    const form = document.getElementById('email-form');
+    const emailInput = document.getElementById('email');
+    const errorDiv = document.getElementById('error');
+    const requiredDomain = '@premiere-urgence-lib.org';
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const email = emailInput.value.trim().toLowerCase();
+      if (email.endsWith(requiredDomain)) {
+        // valid → go to ticket submission
+        window.location.href = 'ticket-submission.html';
+      } else {
+        // invalid → show error
+        errorDiv.style.display = 'block';
+      }
+    });
+
+    emailInput.addEventListener('input', () => {
+      errorDiv.style.display = 'none';
+    });
+  </script>
+</body>
+</html>
