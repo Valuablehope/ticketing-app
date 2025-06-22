@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Create HIS User</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+  <div class="container">
+    <div class="card create-user-card">
+      <h2>Create New HIS User</h2>
+      <form id="create-user-form">
+        <div class="input-group vertical">
+          <input type="text"    id="full-name"       placeholder="Full Name" required />
+          <input type="email"   id="user-email"      placeholder="Email" required />
+          <input type="password"id="user-password"   placeholder="Password" required />
+          <select id="user-role" required>
+            <option value="" disabled selected>Role</option>
+            <option value="admin">Admin</option>
+            <option value="team_lead">Team Lead</option>
+            <option value="officer">Officer</option>
+          </select>
+          <select id="user-base" required>
+            <option value="" disabled selected>Base</option>
+          </select>
+          <input type="text"    id="user-department" placeholder="Department" />
+          <input type="text"    id="user-team"       placeholder="Team" />
+        </div>
+        <button type="submit" class="btn create-user-btn">Create User</button>
+      </form>
+      <div id="create-error"   class="error-message"></div>
+      <div id="create-success" class="success-message"></div>
+      <a href="portal.html" class="btn back-btn" style="margin-top:1rem;">← Back to Dashboard</a>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js" defer></script>
+  <script src="js/create-user.js" defer></script>
+</body>
+</html>

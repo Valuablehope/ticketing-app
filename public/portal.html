@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HIS Portal Dashboard</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Supabase client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js" defer></script>
+  
+  <!-- Portal JavaScript -->
+  <script src="js/portal.js" defer></script>
+</head>
+<body class="portal-body">
+  <!-- Loading Screen -->
+  <div id="loading-screen" class="loading-screen">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <h2>Loading Dashboard...</h2>
+      <p>Please wait while we fetch your data</p>
+    </div>
+  </div>
+
+  <!-- Main Dashboard -->
+  <div class="dashboard-container">
+    <!-- Sidebar Navigation -->
+    <aside class="dashboard-sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M9 12l2 2 4-4"/>
+            <circle cx="12" cy="12" r="10"/>
+          </svg>
+          <span class="logo-text">HIS Portal</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <h3 class="nav-section-title">Main</h3>
+          <ul class="nav-list">
+            <li class="nav-item">
+              <a href="#dashboard" class="nav-link active" data-section="dashboard">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                  <line x1="9" y1="9" x2="15" y2="9"/>
+                  <line x1="9" y1="15" x2="15" y2="15"/>
+                </svg>
+                Dashboard
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="#tickets" class="nav-link" data-section="tickets">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14,2 14,8 20,8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                  <polyline points="10,9 9,9 8,9"/>
+                </svg>
+                All Tickets
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="#analytics" class="nav-link" data-section="analytics">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <line x1="18" y1="20" x2="18" y2="10"/>
+                  <line x1="12" y1="20" x2="12" y2="4"/>
+                  <line x1="6" y1="20" x2="6" y2="14"/>
+                </svg>
+                Analytics
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="nav-section">
+          <h3 class="nav-section-title">Management</h3>
+          <ul class="nav-list">
+            <li class="nav-item">
+              <a href="create-user.html" class="nav-link">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="8.5" cy="7" r="4"/>
+                  <line x1="20" y1="8" x2="20" y2="14"/>
+                  <line x1="23" y1="11" x2="17" y2="11"/>
+                </svg>
+                Create User
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="ticket-submission.html" class="nav-link">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M12 2v20M2 12h20"/>
+                </svg>
+                Submit Ticket
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-profile">
+          <div class="user-avatar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+          <div class="user-info">
+            <span class="user-name">Admin User</span>
+            <span class="user-role">Administrator</span>
+          </div>
+        </div>
+        <button class="logout-btn" onclick="handleLogout()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16,17 21,12 16,7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Logout
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="dashboard-main">
+      <!-- Top Header -->
+      <header class="dashboard-header">
+        <div class="header-left">
+          <button class="mobile-menu-btn" id="mobile-menu-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+          <div class="breadcrumb">
+            <h1 id="page-title">Dashboard</h1>
+            <p id="page-subtitle">Overview of all tickets and system metrics</p>
+          </div>
+        </div>
+        <div class="header-right">
+          <button class="refresh-btn" onclick="refreshDashboard()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <polyline points="23,4 23,10 17,10"/>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+            </svg>
+            Refresh
+          </button>
+          <div class="user-menu">
+            <button class="user-menu-btn">
+              <div class="user-avatar-small">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+              </div>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Dashboard Content -->
+      <div class="dashboard-content">
+        <!-- Dashboard Section -->
+        <section id="dashboard-section" class="content-section active">
+          <!-- Quick Stats -->
+          <div class="stats-overview">
+            <div class="stat-card">
+              <div class="stat-header">
+                <h3>Total Tickets</h3>
+                <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14,2 14,8 20,8"/>
+                </svg>
+              </div>
+              <div class="stat-content">
+                <div class="stat-number" id="total-tickets">0</div>
+                <div class="stat-change positive">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <polyline points="22,12 18,8 14,12"/>
+                    <path d="M16 8v13a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V8"/>
+                  </svg>
+                  +12% from last month
+                </div>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-header">
+                <h3>Open Tickets</h3>
+                <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M12 6v6l4 2"/>
+                </svg>
+              </div>
+              <div class="stat-content">
+                <div class="stat-number" id="open-tickets">0</div>
+                <div class="stat-change negative">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <polyline points="22,12 18,16 14,12"/>
+                    <path d="M16 16v-13a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v13"/>
+                  </svg>
+                  +5% from last week
+                </div>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-header">
+                <h3>Resolved Today</h3>
+                <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <polyline points="22,4 12,14.01 9,11.01"/>
+                </svg>
+              </div>
+              <div class="stat-content">
+                <div class="stat-number" id="resolved-today">0</div>
+                <div class="stat-change positive">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <polyline points="22,12 18,8 14,12"/>
+                    <path d="M16 8v13a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V8"/>
+                  </svg>
+                  +8% from yesterday
+                </div>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-header">
+                <h3>Avg Resolution Time</h3>
+                <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12,6 12,12 16,14"/>
+                </svg>
+              </div>
+              <div class="stat-content">
+                <div class="stat-number" id="avg-resolution">0h</div>
+                <div class="stat-change positive">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <polyline points="22,12 18,8 14,12"/>
+                    <path d="M16 8v13a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V8"/>
+                  </svg>
+                  -15% improvement
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Detailed Stats Grid -->
+          <div class="dashboard-grid">
+            <!-- Status Distribution -->
+            <div class="dashboard-card">
+              <div class="card-header">
+                <h3>Tickets by Status</h3>
+                <button class="card-action-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <circle cx="12" cy="12" r="1"/>
+                    <circle cx="19" cy="12" r="1"/>
+                    <circle cx="5" cy="12" r="1"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="card-content">
+                <div class="status-list" id="status-stats">
+                  <!-- Status items will be populated by JavaScript -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Assignee Workload -->
+            <div class="dashboard-card">
+              <div class="card-header">
+                <h3>Team Workload</h3>
+                <button class="card-action-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <circle cx="12" cy="12" r="1"/>
+                    <circle cx="19" cy="12" r="1"/>
+                    <circle cx="5" cy="12" r="1"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="card-content">
+                <div class="workload-table-container">
+                  <table class="workload-table" id="assignee-stats">
+                    <thead>
+                      <tr>
+                        <th>Assignee</th>
+                        <th>Open</th>
+                        <th>Closed</th>
+                        <th>Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <!-- Assignee data will be populated by JavaScript -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Team Performance -->
+            <div class="dashboard-card">
+              <div class="card-header">
+                <h3>Team Performance</h3>
+                <button class="card-action-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <circle cx="12" cy="12" r="1"/>
+                    <circle cx="19" cy="12" r="1"/>
+                    <circle cx="5" cy="12" r="1"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="card-content">
+                <div class="team-table-container">
+                  <table class="team-table" id="team-stats">
+                    <thead>
+                      <tr>
+                        <th>Team</th>
+                        <th>Total</th>
+                        <th>Open</th>
+                        <th>Completion %</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <!-- Team data will be populated by JavaScript -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="dashboard-card span-full">
+              <div class="card-header">
+                <h3>Recent Tickets</h3>
+                <a href="#tickets" class="card-action-link" data-section="tickets">View All</a>
+              </div>
+              <div class="card-content">
+                <div class="recent-tickets" id="recent-tickets">
+                  <!-- Recent tickets will be populated by JavaScript -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Tickets Section -->
+        <section id="tickets-section" class="content-section">
+          <div class="section-header">
+            <div class="section-title">
+              <h2>All Tickets</h2>
+              <p>Manage and track all support tickets</p>
+            </div>
+            <div class="section-actions">
+              <div class="search-container">
+                <input type="text" id="ticket-search" class="search-input" placeholder="Search tickets...">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <circle cx="11" cy="11" r="8"/>
+                  <path d="M21 21l-4.35-4.35"/>
+                </svg>
+              </div>
+              <div class="filter-container">
+                <select id="status-filter" class="filter-select">
+                  <option value="">All Status</option>
+                  <option value="Open">Open</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Resolved">Resolved</option>
+                  <option value="Closed">Closed</option>
+                </select>
+                <select id="priority-filter" class="filter-select">
+                  <option value="">All Priority</option>
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                </select>
+              </div>
+              <div class="view-controls">
+                <button class="view-btn active" data-view="table">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M3 6h18M3 12h18M3 18h18"/>
+                  </svg>
+                  Table
+                </button>
+                <button class="view-btn" data-view="cards">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <rect x="3" y="3" width="6" height="6" rx="1"/>
+                    <rect x="15" y="3" width="6" height="6" rx="1"/>
+                    <rect x="3" y="15" width="6" height="6" rx="1"/>
+                    <rect x="15" y="15" width="6" height="6" rx="1"/>
+                  </svg>
+                  Cards
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bulk Actions -->
+          <div class="bulk-actions">
+            <div class="bulk-select">
+              <input type="checkbox" id="select-all" class="select-all-checkbox">
+              <label for="select-all">Select All</label>
+            </div>
+            <button class="bulk-action-btn" disabled>
+              Actions
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <polyline points="6,9 12,15 18,9"/>
+              </svg>
+            </button>
+            <button class="clear-filters-btn" onclick="clearFilters()">
+              Clear Filters
+            </button>
+          </div>
+
+          <!-- Table View -->
+          <div id="table-view" class="table-view active">
+            <div class="tickets-table-container">
+              <table class="tickets-table" id="tickets-table">
+                <thead>
+                  <tr>
+                    <th class="checkbox-col">
+                      <input type="checkbox" class="header-checkbox">
+                    </th>
+                    <th class="sortable" data-sort="ticket_number">
+                      Ticket ID
+                      <svg class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <polyline points="6,9 12,15 18,9"/>
+                      </svg>
+                    </th>
+                    <th class="sortable" data-sort="title">
+                      Title
+                      <svg class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <polyline points="6,9 12,15 18,9"/>
+                      </svg>
+                    </th>
+                    <th class="sortable" data-sort="status">
+                      Status
+                      <svg class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <polyline points="6,9 12,15 18,9"/>
+                      </svg>
+                    </th>
+                    <th class="sortable" data-sort="priority">
+                      Priority
+                      <svg class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <polyline points="6,9 12,15 18,9"/>
+                      </svg>
+                    </th>
+                    <th>Assignee</th>
+                    <th>Location</th>
+                    <th class="sortable" data-sort="created_at">
+                      Created
+                      <svg class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <polyline points="6,9 12,15 18,9"/>
+                      </svg>
+                    </th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Tickets will be populated by JavaScript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Cards View -->
+          <div id="cards-view" class="cards-view">
+            <div id="tickets-cards" class="tickets-cards">
+              <!-- Cards will be populated by JavaScript -->
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div id="empty-state" class="empty-state" style="display: none;">
+            <div class="empty-state-content">
+              <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14,2 14,8 20,8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10,9 9,9 8,9"/>
+              </svg>
+              <h3>No tickets found</h3>
+              <p>Try adjusting your search criteria or clear the filters.</p>
+              <button class="btn-primary" onclick="clearFilters()">Clear Filters</button>
+            </div>
+          </div>
+
+          <div class="table-pagination">
+            <div class="pagination-info">
+              Showing <span id="pagination-showing">0</span> of <span id="pagination-total">0</span> tickets
+            </div>
+            <div class="pagination-controls">
+              <button class="pagination-btn" id="prev-page" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <polyline points="15,18 9,12 15,6"/>
+                </svg>
+                Previous
+              </button>
+              <div class="pagination-numbers" id="pagination-numbers">
+                <!-- Page numbers will be populated by JavaScript -->
+              </div>
+              <button class="pagination-btn" id="next-page">
+                Next
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <polyline points="9,18 15,12 9,6"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Analytics Section -->
+        <section id="analytics-section" class="content-section">
+          <div class="section-header">
+            <div class="section-title">
+              <h2>Analytics & Reports</h2>
+              <p>Detailed insights and performance metrics</p>
+            </div>
+          </div>
+
+          <div class="analytics-grid">
+            <div class="dashboard-card">
+              <div class="card-header">
+                <h3>Ticket Trends</h3>
+              </div>
+              <div class="card-content">
+                <p class="coming-soon">📊 Chart visualization coming soon</p>
+              </div>
+            </div>
+
+            <div class="dashboard-card">
+              <div class="card-header">
+                <h3>Performance Metrics</h3>
+              </div>
+              <div class="card-content">
+                <p class="coming-soon">📈 Performance analytics coming soon</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Ticket Detail Modal -->
+  <div id="ticket-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-title">Ticket Details</h3>
+        <button class="modal-close" onclick="closeTicketModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body" id="modal-body">
+        <!-- Modal content will be populated by JavaScript -->
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HIS Portal Login</title>
+  
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  
+  <!-- Supabase -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .login-container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      padding: 40px;
+      width: 100%;
+      max-width: 420px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .logo-section {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .logo {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+    }
+
+    .logo::before {
+      content: "🏥";
+      font-size: 24px;
+    }
+
+    .title {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 16px;
+      font-weight: 400;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #374151;
+      font-size: 14px;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 16px 20px;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      background: white;
+      color: #1a1a1a;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #6b7280;
+      font-size: 14px;
+      padding: 4px;
+    }
+
+    .password-toggle:hover {
+      color: #374151;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .login-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .login-btn:active {
+      transform: translateY(0);
+    }
+
+    .login-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-spinner {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 500;
+      margin-top: 20px;
+      padding: 8px 0;
+      transition: color 0.3s ease;
+    }
+
+    .back-btn:hover {
+      color: #764ba2;
+    }
+
+    .error-message {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-top: 16px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .success-message {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #166534;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-top: 16px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .forgot-password {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .forgot-password a {
+      color: #667eea;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .forgot-password a:hover {
+      text-decoration: underline;
+    }
+
+    .debug-info {
+      background: #f3f4f6;
+      border: 1px solid #d1d5db;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 20px;
+      font-size: 12px;
+      color: #374151;
+    }
+
+    @media (max-width: 480px) {
+      .login-container {
+        padding: 30px 20px;
+        margin: 10px;
+      }
+      
+      .title {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="logo-section">
+      <div class="logo"></div>
+      <h1 class="title">Welcome Back</h1>
+      <p class="subtitle">Sign in to your HIS Portal account</p>
+    </div>
+
+    <form id="login-form">
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input 
+          type="email" 
+          id="email" 
+          class="form-input" 
+          placeholder="Enter your email"
+          required 
+          autocomplete="email"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="input-wrapper">
+          <input 
+            type="password" 
+            id="password" 
+            class="form-input" 
+            placeholder="Enter your password"
+            required 
+            autocomplete="current-password"
+          />
+          <button type="button" class="password-toggle" id="password-toggle">
+            👁️
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" class="login-btn" id="login-btn">
+        <div class="btn-spinner" id="btn-spinner"></div>
+        <span id="btn-text">Sign In</span>
+      </button>
+    </form>
+
+    <div class="forgot-password">
+      <a href="#" id="forgot-password-link">Forgot your password?</a>
+    </div>
+
+    <a href="ticket-submission.html" class="back-btn">
+      ← Back to Ticket Portal
+    </a>
+
+    <div id="error-message" class="error-message"></div>
+    <div id="success-message" class="success-message"></div>
+    
+    <div id="debug-info" class="debug-info">
+      <strong>Debug Info:</strong>
+      <div id="debug-content">Initializing...</div>
+    </div>
+  </div>
+
+  <script>
+    // Supabase configuration
+    const SUPABASE_URL = 'https://rkdblbnmtzyrapfemswq.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrZGJsYm5tdHp5cmFwZmVtc3dxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1ODQyNTgsImV4cCI6MjA2NjE2MDI1OH0.TY7Ml-S-knKMNQ-HKylGLbpXIu9wHqGAZDHHAq4rRJc';
+    
+    let supabaseClient;
+    let debugInfo = [];
+
+    // Initialize Supabase with proper error handling
+    function initializeSupabase() {
+      try {
+        // Check multiple possible Supabase global variables
+        let SupabaseLib;
+        
+        if (typeof window.supabase !== 'undefined') {
+          SupabaseLib = window.supabase;
+          debugInfo.push('✓ Found window.supabase');
+        } else if (typeof window.Supabase !== 'undefined') {
+          SupabaseLib = window.Supabase;
+          debugInfo.push('✓ Found window.Supabase');
+        } else if (typeof supabase !== 'undefined') {
+          SupabaseLib = supabase;
+          debugInfo.push('✓ Found global supabase');
+        } else {
+          // List all available globals for debugging
+          const globals = Object.keys(window).filter(key => 
+            key.toLowerCase().includes('supabase') || key.toLowerCase().includes('supa')
+          );
+          debugInfo.push(`Available globals: ${globals.join(', ') || 'none found'}`);
+          throw new Error('Supabase library not found. Available globals: ' + globals.join(', '));
+        }
+        
+        // Initialize Supabase client
+        if (SupabaseLib && SupabaseLib.createClient) {
+          supabaseClient = SupabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } else {
+          throw new Error('createClient method not found on Supabase object');
+        }
+        
+        if (!supabaseClient) {
+          throw new Error('Failed to create Supabase client');
+        }
+        
+        debugInfo.push('✓ Supabase client initialized');
+        //debugInfo.push(`URL: ${SUPABASE_URL}`);
+        //debugInfo.push(`Key: ${SUPABASE_ANON_KEY.substring(0, 20)}...`);
+        
+        return true;
+      } catch (error) {
+        debugInfo.push(`✗ Supabase initialization failed: ${error.message}`);
+        console.error('Supabase initialization error:', error);
+        return false;
+      }
+    }
+
+    // Update debug display
+    function updateDebugInfo() {
+      const debugContent = document.getElementById('debug-content');
+      debugContent.innerHTML = debugInfo.join('<br>');
+    }
+
+    // DOM elements
+    const loginForm = document.getElementById('login-form');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const loginBtn = document.getElementById('login-btn');
+    const btnSpinner = document.getElementById('btn-spinner');
+    const btnText = document.getElementById('btn-text');
+    const passwordToggle = document.getElementById('password-toggle');
+    const forgotPasswordLink = document.getElementById('forgot-password-link');
+
+    // Password visibility toggle
+    passwordToggle.addEventListener('click', () => {
+      const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+      passwordInput.setAttribute('type', type);
+      passwordToggle.textContent = type === 'password' ? '👁️' : '🙈';
+    });
+
+    // Form submission
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+
+      if (!email || !password) {
+        showMessage('Please fill in all fields', 'error');
+        return;
+      }
+
+      if (!supabaseClient) {
+        showMessage('Authentication service not available. Please refresh the page.', 'error');
+        return;
+      }
+
+      setLoading(true);
+      hideMessages();
+
+      try {
+        debugInfo.push(`Attempting login for: ${email}`);
+        updateDebugInfo();
+
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+          email: email,
+          password: password
+        });
+
+        if (error) {
+          debugInfo.push(`✗ Login error: ${error.message}`);
+          debugInfo.push(`Error code: ${error.status || 'unknown'}`);
+          updateDebugInfo();
+          
+          // Provide more specific error messages
+          let userMessage = error.message;
+          if (error.message.includes('Invalid login credentials')) {
+            userMessage = 'Invalid email or password. Please check your credentials and try again.';
+          } else if (error.message.includes('Email not confirmed')) {
+            userMessage = 'Please check your email and confirm your account before signing in.';
+          }
+          
+          showMessage(userMessage, 'error');
+        } else if (data?.user) {
+          debugInfo.push('✓ Login successful');
+          debugInfo.push(`User ID: ${data.user.id}`);
+          updateDebugInfo();
+          
+          showMessage('Login successful! Redirecting...', 'success');
+          
+          // Redirect after success
+          setTimeout(() => {
+            window.location.href = 'portal.html';
+          }, 1500);
+        } else {
+          debugInfo.push('✗ No user data returned');
+          updateDebugInfo();
+          showMessage('Login failed. No user data received.', 'error');
+        }
+      } catch (error) {
+        debugInfo.push(`✗ Unexpected error: ${error.message}`);
+        updateDebugInfo();
+        showMessage('An unexpected error occurred. Please try again.', 'error');
+        console.error('Login error:', error);
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    // Forgot password
+    forgotPasswordLink.addEventListener('click', async (e) => {
+      e.preventDefault();
+      
+      const email = emailInput.value.trim();
+      if (!email) {
+        showMessage('Please enter your email address first', 'error');
+        emailInput.focus();
+        return;
+      }
+
+      if (!supabaseClient) {
+        showMessage('Authentication service not available. Please refresh the page.', 'error');
+        return;
+      }
+
+      try {
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin + '/reset-password.html'
+        });
+        
+        if (error) {
+          debugInfo.push(`✗ Password reset error: ${error.message}`);
+          updateDebugInfo();
+          showMessage('Failed to send reset email: ' + error.message, 'error');
+        } else {
+          debugInfo.push(`✓ Password reset email sent to: ${email}`);
+          updateDebugInfo();
+          showMessage('Password reset email sent! Check your inbox.', 'success');
+        }
+      } catch (error) {
+        debugInfo.push(`✗ Password reset error: ${error.message}`);
+        updateDebugInfo();
+        showMessage('Failed to send reset email', 'error');
+        console.error('Password reset error:', error);
+      }
+    });
+
+    // Helper functions
+    function setLoading(loading) {
+      loginBtn.disabled = loading;
+      btnSpinner.style.display = loading ? 'inline-block' : 'none';
+      btnText.textContent = loading ? 'Signing in...' : 'Sign In';
+    }
+
+    function showMessage(message, type) {
+      const errorDiv = document.getElementById('error-message');
+      const successDiv = document.getElementById('success-message');
+      
+      if (type === 'error') {
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+        successDiv.style.display = 'none';
+      } else {
+        successDiv.textContent = message;
+        successDiv.style.display = 'block';
+        errorDiv.style.display = 'none';
+      }
+    }
+
+    function hideMessages() {
+      document.getElementById('error-message').style.display = 'none';
+      document.getElementById('success-message').style.display = 'none';
+    }
+
+    // Check if user is already authenticated
+    async function checkExistingSession() {
+      if (!supabaseClient) return;
+      
+      try {
+        // Check for email confirmation in URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const type = urlParams.get('type');
+        
+        if (token && type === 'email') {
+          debugInfo.push('○ Email confirmation token detected');
+          updateDebugInfo();
+          
+          // Verify the email confirmation
+          const { data, error } = await supabaseClient.auth.verifyOtp({
+            token_hash: token,
+            type: 'email'
+          });
+          
+          if (error) {
+            debugInfo.push(`✗ Email confirmation failed: ${error.message}`);
+            showMessage('Email confirmation failed: ' + error.message, 'error');
+          } else {
+            debugInfo.push('✓ Email confirmed successfully');
+            showMessage('Email confirmed successfully! You can now sign in.', 'success');
+            
+            // Clean the URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+          
+          updateDebugInfo();
+          return;
+        }
+        
+        // Check for existing session
+        const { data: { session }, error } = await supabaseClient.auth.getSession();
+        
+        if (error) {
+          debugInfo.push(`✗ Session check error: ${error.message}`);
+        } else if (session?.user) {
+          debugInfo.push('✓ Existing session found');
+          debugInfo.push(`User: ${session.user.email}`);
+          // Redirect to portal if already logged in
+          window.location.href = 'portal.html';
+        } else {
+          debugInfo.push('○ No existing session');
+        }
+        
+        updateDebugInfo();
+      } catch (error) {
+        debugInfo.push(`✗ Session check failed: ${error.message}`);
+        updateDebugInfo();
+        console.error('Session check error:', error);
+      }
+    }
+
+    // Initialize everything when page loads
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Wait a bit for the script to fully load
+      setTimeout(async () => {
+        // Initialize Supabase
+        const supabaseInitialized = initializeSupabase();
+        updateDebugInfo();
+        
+        if (supabaseInitialized) {
+          // Check for existing session
+          await checkExistingSession();
+        } else {
+          showMessage('Failed to initialize authentication service. Please refresh the page.', 'error');
+        }
+        
+        // Auto-focus email input
+        emailInput.focus();
+      }, 100);
+    });
+  </script>
+</body>
+</html>

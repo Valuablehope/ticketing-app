@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HIS Ticketing System</title>
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/style.css"/>
+
+  <!-- Supabase UMD -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js" defer></script>
+  <!-- Our front-end logic -->
+  <script src="js/ticket-submission.js" defer></script>
+</head>
+<body>
+  <div class="main-container">
+    <!-- Header Section -->
+    <div class="header">
+      <div class="header-content">
+        <h1>HIS Ticketing System</h1>
+        <p>Submit and track your IT support requests</p>
+      </div>
+      <div class="header-decoration">
+        <div class="decoration-circle"></div>
+        <div class="decoration-circle"></div>
+        <div class="decoration-circle"></div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs-container">
+      <div class="tabs">
+        <button id="track-tab" class="tab active" aria-selected="true">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          Track Ticket
+        </button>
+        <button id="submit-tab" class="tab" aria-selected="false">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M12 4v16m8-8H4"/>
+          </svg>
+          Submit New Ticket
+        </button>
+      </div>
+    </div>
+
+    <!-- Content Sections -->
+    <div class="content">
+      <!-- Track Ticket Section -->
+      <section id="track-section" class="section active" role="tabpanel">
+        <div class="section-header">
+          <h2>Track Your Ticket</h2>
+          <p class="section-description">Enter your ticket ID to view status and details</p>
+        </div>
+        
+        <form id="track-form" class="track-form">
+          <div class="search-container">
+            <div class="search-input-wrapper">
+              <input 
+                type="text" 
+                id="ticket-id" 
+                class="form-control search-input" 
+                placeholder="Enter Ticket ID (e.g., TKT-12345)" 
+                required 
+                pattern="[A-Za-z0-9\-]+"
+                aria-describedby="ticket-id-help"
+              />
+              <div class="input-decoration"></div>
+            </div>
+            <button type="submit" class="search-btn" aria-label="Search Ticket">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+            </button>
+          </div>
+          <div id="ticket-id-help" class="form-help">
+            Use the ticket ID provided when you submitted your request
+          </div>
+        </form>
+      </section>
+
+      <!-- Submit Ticket Section -->
+      <section id="submit-section" class="section" role="tabpanel">
+        <div class="section-header">
+          <h2>Submit New Ticket</h2>
+          <p class="section-description">Describe your issue and we'll get back to you</p>
+        </div>
+
+        <form id="submit-form" class="submit-form">
+          <!-- Personal Information -->
+          <div class="form-section">
+            <h3 class="form-section-title">Contact Information</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="submitter-name" class="form-label">Full Name *</label>
+                <input 
+                  type="text" 
+                  id="submitter-name" 
+                  class="form-control" 
+                  placeholder="Enter your full name" 
+                  required 
+                />
+              </div>
+              <div class="form-group">
+                <label for="submitter-email" class="form-label">Email Address *</label>
+                <input 
+                  type="email" 
+                  id="submitter-email" 
+                  class="form-control" 
+                  placeholder="your.email@company.com" 
+                  required 
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Ticket Details -->
+          <div class="form-section">
+            <h3 class="form-section-title">Ticket Details</h3>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="ticket-base" class="form-label">Base/Location *</label>
+                <div class="select-wrapper">
+                  <select id="ticket-base" class="form-control" required>
+                    <option value="" disabled selected>Select your base/location</option>
+                  </select>
+                  <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M6 9l6 6 6-6"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="ticket-category" class="form-label">Issue Category *</label>
+                <div class="select-wrapper">
+                  <select id="ticket-category" class="form-control" required>
+                    <option value="" disabled selected>Select issue category</option>
+                  </select>
+                  <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M6 9l6 6 6-6"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="ticket-title" class="form-label">Issue Title *</label>
+              <input 
+                type="text" 
+                id="ticket-title" 
+                class="form-control" 
+                placeholder="Brief description of your issue" 
+                required 
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="ticket-desc" class="form-label">Detailed Description *</label>
+              <textarea 
+                id="ticket-desc" 
+                class="form-control" 
+                rows="4" 
+                placeholder="Please provide as much detail as possible about your issue, including steps to reproduce if applicable..."
+                required
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="ticket-priority" class="form-label">Priority Level *</label>
+              <div class="priority-options">
+                <label class="priority-option">
+                  <input type="radio" name="priority" value="Low" required>
+                  <span class="priority-indicator low"></span>
+                  <div class="priority-content">
+                    <span class="priority-name">Low</span>
+                    <span class="priority-desc">General questions, minor issues</span>
+                  </div>
+                </label>
+                <label class="priority-option">
+                  <input type="radio" name="priority" value="Medium" required>
+                  <span class="priority-indicator medium"></span>
+                  <div class="priority-content">
+                    <span class="priority-name">Medium</span>
+                    <span class="priority-desc">Issues affecting work productivity</span>
+                  </div>
+                </label>
+                <label class="priority-option">
+                  <input type="radio" name="priority" value="High" required>
+                  <span class="priority-indicator high"></span>
+                  <div class="priority-content">
+                    <span class="priority-name">High</span>
+                    <span class="priority-desc">Critical issues, system down</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary submit-btn">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M5 12h14m-7-7l7 7-7 7"/>
+              </svg>
+              Submit Ticket
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <!-- Loading & Results -->
+    <div id="loader" class="loader hidden">
+      <div class="loader-spinner"></div>
+      <p class="loader-text">Processing your request...</p>
+    </div>
+
+    <div id="result" class="result-container"></div>
+
+    <!-- Portal Link -->
+    <div class="portal-link-container">
+      <a href="login.html" class="portal-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M9 12l2 2 4-4"/>
+          <circle cx="12" cy="12" r="10"/>
+        </svg>
+        Access HIS Portal
+      </a>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+  </div>
+</body>
+</html>
