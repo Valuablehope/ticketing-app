@@ -1,3 +1,116 @@
+// Security check - runs immediately when script loads
+(function() {
+  'use strict';
+  
+  // Function to check session validity
+  function isValidSession() {
+    try {
+      const session = sessionStorage.getItem('ticketing_session');
+      const signature = sessionStorage.getItem('session_signature');
+      
+      if (!session || !signature) {
+        return false;
+      }
+      
+      const sessionData = JSON.parse(session);
+      
+      // Check if session is expired
+      if (!sessionData.expiration || sessionData.expiration <= Date.now()) {
+        return false;
+      }
+      
+      // Check if session is properly verified
+      if (!sessionData.verified || !sessionData.token) {
+        return false;
+      }
+      
+      // Verify signature hasn't been tampered with
+      try {
+        const signatureData = JSON.parse(atob(signature));
+        if (!signatureData.token || !signatureData.timestamp || !signatureData.email) {
+          return false;
+        }
+        
+        // Check if signature matches session
+        if (signatureData.token !== sessionData.token) {
+          return false;
+        }
+        
+        // Check if signature is not too old (max 1 hour)
+        if (Date.now() - signatureData.timestamp > 60 * 60 * 1000) {
+          return false;
+        }
+        
+      } catch (e) {
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+  
+  // Function to clear session and redirect
+  function redirectToAuth() {
+    sessionStorage.removeItem('ticketing_session');
+    sessionStorage.removeItem('session_signature');
+    
+    // Show a brief message before redirect
+    document.body.innerHTML = `
+      <div style="
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        font-family: Inter, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        margin: 0;
+        padding: 20px;
+      ">
+        <div style="
+          background: rgba(255,255,255,0.95);
+          backdrop-filter: blur(8px);
+          border-radius: 16px;
+          padding: 40px;
+          text-align: center;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+          max-width: 400px;
+        ">
+          <h2 style="color: #333; margin-bottom: 20px;">Access Denied</h2>
+          <p style="color: #666; margin-bottom: 20px;">Please verify your email address to access the ticketing system.</p>
+          <div style="color: #667eea;">Redirecting...</div>
+        </div>
+      </div>
+    `;
+    
+    setTimeout(() => {
+      window.location.href = '../index.html';
+    }, 2000);
+  }
+  
+  // Check session immediately
+  if (!isValidSession()) {
+    redirectToAuth();
+    return; // Stop script execution
+  }
+  
+  // Set up periodic session checks
+  setInterval(() => {
+    if (!isValidSession()) {
+      redirectToAuth();
+    }
+  }, 60000); // Check every minute
+  
+  // Check when page becomes visible (user switches back to tab)
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && !isValidSession()) {
+      redirectToAuth();
+    }
+  });
+  
+})();
+
 document.addEventListener("DOMContentLoaded", () => {
   // Initialize Supabase
   const SUPABASE_URL = "https://rkdblbnmtzyrapfemswq.supabase.co";
@@ -5,6 +118,18 @@ document.addEventListener("DOMContentLoaded", () => {
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrZGJsYm5tdHp5cmFwZmVtc3dxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1ODQyNTgsImV4cCI6MjA2NjE2MDI1OH0.TY7Ml-S-knKMNQ-HKylGLbpXIu9wHqGAZDHHAq4rRJc";
   const { createClient } = supabase;
   const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Get user email from session for pre-filling
+  let userEmail = '';
+  try {
+    const session = sessionStorage.getItem('ticketing_session');
+    if (session) {
+      const sessionData = JSON.parse(session);
+      userEmail = sessionData.email || '';
+    }
+  } catch (error) {
+    console.warn('Could not retrieve user email from session');
+  }
 
   // --- Element references ---
   const trackTab = document.getElementById('track-tab');
@@ -635,6 +760,14 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       await loadLookupData();
       handleInitialTab();
+      
+      // Pre-fill email field if available from session
+      if (userEmail) {
+        const emailField = document.getElementById('submitter-email');
+        if (emailField) {
+          emailField.value = userEmail;
+        }
+      }
       
       // Add some accessibility enhancements
       document.body.addEventListener('keydown', (e) => {

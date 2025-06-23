@@ -9,8 +9,95 @@
   <!-- Google Font -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 
-  <!-- Styles -->
-  <link rel="stylesheet" href="css/style.css"/>
+  <!-- Base styles -->
+  <link rel="stylesheet" href="css/base/variables.css">
+  <link rel="stylesheet" href="css/base/reset.css">
+  <link rel="stylesheet" href="css/base/utilities.css">
+  
+  <!-- Component styles -->
+  <link rel="stylesheet" href="css/components/buttons.css">
+  <link rel="stylesheet" href="css/components/forms.css">
+  <link rel="stylesheet" href="css/components/navigation.css">
+  <link rel="stylesheet" href="css/components/cards.css">
+  
+  <!-- Page-specific styles -->
+  <link rel="stylesheet" href="css/pages/ticket-submission.css">
+  
+  <!-- Security Check Script - Must load first -->
+  <script>
+    // Immediate security check before page loads
+    (function() {
+      'use strict';
+      
+      function isValidSession() {
+        try {
+          const session = sessionStorage.getItem('ticketing_session');
+          const signature = sessionStorage.getItem('session_signature');
+          
+          if (!session || !signature) return false;
+          
+          const sessionData = JSON.parse(session);
+          
+          // Check expiration
+          if (!sessionData.expiration || sessionData.expiration <= Date.now()) return false;
+          
+          // Check verification status
+          if (!sessionData.verified || !sessionData.token) return false;
+          
+          // Verify signature
+          try {
+            const signatureData = JSON.parse(atob(signature));
+            if (!signatureData.token || signatureData.token !== sessionData.token) return false;
+            if (Date.now() - signatureData.timestamp > 60 * 60 * 1000) return false;
+          } catch (e) {
+            return false;
+          }
+          
+          return true;
+        } catch (error) {
+          return false;
+        }
+      }
+      
+      // If session is invalid, prevent page load and redirect
+      if (!isValidSession()) {
+        // Clear any invalid session data
+        sessionStorage.removeItem('ticketing_session');
+        sessionStorage.removeItem('session_signature');
+        
+        // Redirect immediately
+        window.location.replace('../index.html');
+        
+        // Stop page execution
+        document.addEventListener('DOMContentLoaded', function(e) {
+          e.stopImmediatePropagation();
+        }, true);
+        
+        // Block the page content
+        document.addEventListener('readystatechange', function() {
+          if (document.readyState === 'interactive' || document.readyState === 'complete') {
+            document.body.innerHTML = `
+              <div class="redirect-container">
+                <div class="redirect-card">
+                  <div class="redirect-content">
+                    <svg class="redirect-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M12 2L2 7v10c0 5.55 3.84 10 9 10s9-4.45 9-10V7L12 2z"/>
+                      <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                    </svg>
+                    <h2>Redirecting...</h2>
+                    <p>Please verify your email address first.</p>
+                    <div class="redirect-loader">
+                      <div class="loader-spinner"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+        });
+      }
+    })();
+  </script>
 
   <!-- Supabase UMD -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js" defer></script>
@@ -20,7 +107,7 @@
 <body>
   <div class="main-container">
     <!-- Header Section -->
-    <div class="header">
+    <header class="header">
       <div class="header-content">
         <h1>HIS Ticketing System</h1>
         <p>Submit and track your IT support requests</p>
@@ -30,30 +117,51 @@
         <div class="decoration-circle"></div>
         <div class="decoration-circle"></div>
       </div>
-    </div>
+    </header>
 
-    <!-- Navigation Tabs -->
-    <div class="tabs-container">
-      <div class="tabs">
-        <button id="track-tab" class="tab active" aria-selected="true">
-          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+    <!-- Session Info Bar -->
+    <div class="session-info">
+      <div class="session-content">
+        <div class="session-email-wrapper">
+          <svg class="session-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M9 12l2 2 4-4"/>
+            <circle cx="12" cy="12" r="10"/>
           </svg>
-          Track Ticket
-        </button>
-        <button id="submit-tab" class="tab" aria-selected="false">
-          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M12 4v16m8-8H4"/>
+          <span id="session-email" class="session-email">Email verified</span>
+        </div>
+        <button id="logout-btn" class="logout-btn" title="Return to email verification">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16,17 21,12 16,7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
           </svg>
-          Submit New Ticket
+          <span class="logout-text">Logout</span>
         </button>
       </div>
     </div>
 
+    <!-- Navigation Tabs -->
+    <nav class="tabs-container" role="tablist">
+      <div class="tabs">
+        <button id="track-tab" class="tab active" role="tab" aria-selected="true" aria-controls="track-section">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <span class="tab-text">Track Ticket</span>
+        </button>
+        <button id="submit-tab" class="tab" role="tab" aria-selected="false" aria-controls="submit-section">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M12 4v16m8-8H4"/>
+          </svg>
+          <span class="tab-text">Submit New Ticket</span>
+        </button>
+      </div>
+    </nav>
+
     <!-- Content Sections -->
-    <div class="content">
+    <main class="content">
       <!-- Track Ticket Section -->
-      <section id="track-section" class="section active" role="tabpanel">
+      <section id="track-section" class="section active" role="tabpanel" aria-labelledby="track-tab">
         <div class="section-header">
           <h2>Track Your Ticket</h2>
           <p class="section-description">Enter your ticket ID to view status and details</p>
@@ -62,16 +170,19 @@
         <form id="track-form" class="track-form">
           <div class="search-container">
             <div class="search-input-wrapper">
+              <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
               <input 
                 type="text" 
                 id="ticket-id" 
-                class="form-control search-input" 
+                class="search-input" 
                 placeholder="Enter Ticket ID (e.g., TKT-12345)" 
                 required 
                 pattern="[A-Za-z0-9\-]+"
                 aria-describedby="ticket-id-help"
+                autocomplete="off"
               />
-              <div class="input-decoration"></div>
             </div>
             <button type="submit" class="search-btn" aria-label="Search Ticket">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -83,10 +194,39 @@
             Use the ticket ID provided when you submitted your request
           </div>
         </form>
+
+        <div class="quick-actions">
+          <h3 class="quick-actions-title">Quick Actions</h3>
+          <div class="quick-actions-grid">
+            <button type="button" class="quick-action-btn" data-action="recent-tickets">
+              <svg class="quick-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12,6 12,12 16,14"/>
+              </svg>
+              <span>Recent Tickets</span>
+            </button>
+            <button type="button" class="quick-action-btn" data-action="priority-tickets">
+              <svg class="quick-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M12 9v3m0 3h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+              </svg>
+              <span>High Priority</span>
+            </button>
+            <button type="button" class="quick-action-btn" data-action="open-tickets">
+              <svg class="quick-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14,2 14,8 20,8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10,9 9,9 8,9"/>
+              </svg>
+              <span>Open Tickets</span>
+            </button>
+          </div>
+        </div>
       </section>
 
       <!-- Submit Ticket Section -->
-      <section id="submit-section" class="section" role="tabpanel">
+      <section id="submit-section" class="section" role="tabpanel" aria-labelledby="submit-tab">
         <div class="section-header">
           <h2>Submit New Ticket</h2>
           <p class="section-description">Describe your issue and we'll get back to you</p>
@@ -95,38 +235,71 @@
         <form id="submit-form" class="submit-form">
           <!-- Personal Information -->
           <div class="form-section">
-            <h3 class="form-section-title">Contact Information</h3>
+            <h3 class="form-section-title">
+              <svg class="form-section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+              Contact Information
+            </h3>
             <div class="form-row">
               <div class="form-group">
-                <label for="submitter-name" class="form-label">Full Name *</label>
+                <label for="submitter-name" class="form-label">
+                  Full Name <span class="required">*</span>
+                </label>
                 <input 
                   type="text" 
                   id="submitter-name" 
                   class="form-control" 
                   placeholder="Enter your full name" 
                   required 
+                  autocomplete="name"
                 />
               </div>
               <div class="form-group">
-                <label for="submitter-email" class="form-label">Email Address *</label>
+                <label for="submitter-email" class="form-label">
+                  Email Address <span class="required">*</span>
+                </label>
                 <input 
                   type="email" 
                   id="submitter-email" 
                   class="form-control" 
                   placeholder="your.email@company.com" 
                   required 
+                  autocomplete="email"
                 />
               </div>
             </div>
+            <!-- <div class="form-group">
+              <label for="submitter-phone" class="form-label">Phone Number (Optional)</label>
+              <input 
+                type="tel" 
+                id="submitter-phone" 
+                class="form-control" 
+                placeholder="+1 (555) 123-4567" 
+                autocomplete="tel"
+              />
+            </div> -->
           </div>
 
           <!-- Ticket Details -->
           <div class="form-section">
-            <h3 class="form-section-title">Ticket Details</h3>
+            <h3 class="form-section-title">
+              <svg class="form-section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14,2 14,8 20,8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10,9 9,9 8,9"/>
+              </svg>
+              Ticket Details
+            </h3>
             
             <div class="form-row">
               <div class="form-group">
-                <label for="ticket-base" class="form-label">Base/Location *</label>
+                <label for="ticket-base" class="form-label">
+                  Base/Location <span class="required">*</span>
+                </label>
                 <div class="select-wrapper">
                   <select id="ticket-base" class="form-control" required>
                     <option value="" disabled selected>Select your base/location</option>
@@ -137,7 +310,9 @@
                 </div>
               </div>
               <div class="form-group">
-                <label for="ticket-category" class="form-label">Issue Category *</label>
+                <label for="ticket-category" class="form-label">
+                  Issue Category <span class="required">*</span>
+                </label>
                 <div class="select-wrapper">
                   <select id="ticket-category" class="form-control" required>
                     <option value="" disabled selected>Select issue category</option>
@@ -150,59 +325,139 @@
             </div>
 
             <div class="form-group">
-              <label for="ticket-title" class="form-label">Issue Title *</label>
+              <label for="ticket-title" class="form-label">
+                Issue Title <span class="required">*</span>
+              </label>
               <input 
                 type="text" 
                 id="ticket-title" 
                 class="form-control" 
                 placeholder="Brief description of your issue" 
                 required 
+                maxlength="100"
               />
+              <div class="form-help">Keep it concise - maximum 100 characters</div>
             </div>
 
             <div class="form-group">
-              <label for="ticket-desc" class="form-label">Detailed Description *</label>
+              <label for="ticket-desc" class="form-label">
+                Detailed Description <span class="required">*</span>
+              </label>
               <textarea 
                 id="ticket-desc" 
                 class="form-control" 
                 rows="4" 
                 placeholder="Please provide as much detail as possible about your issue, including steps to reproduce if applicable..."
                 required
+                maxlength="1000"
               ></textarea>
+              <div class="form-help">Include error messages, steps to reproduce, and any troubleshooting already attempted</div>
             </div>
 
             <div class="form-group">
-              <label for="ticket-priority" class="form-label">Priority Level *</label>
+              <label class="form-label">
+                Priority Level <span class="required">*</span>
+              </label>
               <div class="priority-options">
                 <label class="priority-option">
                   <input type="radio" name="priority" value="Low" required>
                   <span class="priority-indicator low"></span>
                   <div class="priority-content">
-                    <span class="priority-name">Low</span>
-                    <span class="priority-desc">General questions, minor issues</span>
+                    <span class="priority-name">Low Priority</span>
+                    <span class="priority-desc">General questions, minor issues that don't affect work</span>
                   </div>
                 </label>
                 <label class="priority-option">
                   <input type="radio" name="priority" value="Medium" required>
                   <span class="priority-indicator medium"></span>
                   <div class="priority-content">
-                    <span class="priority-name">Medium</span>
-                    <span class="priority-desc">Issues affecting work productivity</span>
+                    <span class="priority-name">Medium Priority</span>
+                    <span class="priority-desc">Issues affecting work productivity but have workarounds</span>
                   </div>
                 </label>
                 <label class="priority-option">
                   <input type="radio" name="priority" value="High" required>
                   <span class="priority-indicator high"></span>
                   <div class="priority-content">
-                    <span class="priority-name">High</span>
-                    <span class="priority-desc">Critical issues, system down</span>
+                    <span class="priority-name">High Priority</span>
+                    <span class="priority-desc">Critical issues, system down, blocking all work</span>
                   </div>
                 </label>
               </div>
             </div>
-          </div>
 
+            <!-- <div class="form-group">
+              <label for="ticket-urgency" class="form-label">Business Impact</label>
+              <div class="select-wrapper">
+                <select id="ticket-urgency" class="form-control">
+                  <option value="" selected>Select business impact (optional)</option>
+                  <option value="Individual">Affects only me</option>
+                  <option value="Team">Affects my team (2-10 people)</option>
+                  <option value="Department">Affects my department (10+ people)</option>
+                  <option value="Organization">Affects entire organization</option>
+                </select>
+                <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </div>
+            </div>
+          </div> -->
+
+          <!-- Additional Information -->
+          <!-- <div class="form-section">
+            <h3 class="form-section-title">
+              <svg class="form-section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 6v6l4 2"/>
+              </svg>
+              Additional Information
+            </h3> -->
+            
+            <!-- <div class="form-group">
+              <label for="ticket-environment" class="form-label">Environment/System Affected</label>
+              <input 
+                type="text" 
+                id="ticket-environment" 
+                class="form-control" 
+                placeholder="e.g., Windows 10, Chrome browser, SAP system, etc." 
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Preferred Contact Method</label>
+              <div class="contact-options">
+                <label class="contact-option">
+                  <input type="radio" name="contact_method" value="email" checked>
+                  <span class="contact-indicator">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                      <polyline points="22,6 12,13 2,6"/>
+                    </svg>
+                  </span>
+                  <span>Email</span>
+                </label>
+                <label class="contact-option">
+                  <input type="radio" name="contact_method" value="phone">
+                  <span class="contact-indicator">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                    </svg>
+                  </span>
+                  <span>Phone</span>
+                </label>
+              </div>
+            </div>
+          </div> -->
+
+          <!-- Form Actions -->
           <div class="form-actions">
+            <button type="button" class="btn btn-secondary" id="reset-form">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M1 4v6h6"/>
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+              </svg>
+              Reset Form
+            </button>
             <button type="submit" class="btn btn-primary submit-btn">
               <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path d="M5 12h14m-7-7l7 7-7 7"/>
@@ -212,7 +467,7 @@
           </div>
         </form>
       </section>
-    </div>
+    </main>
 
     <!-- Loading & Results -->
     <div id="loader" class="loader hidden">
@@ -223,18 +478,133 @@
     <div id="result" class="result-container"></div>
 
     <!-- Portal Link -->
-    <div class="portal-link-container">
-      <a href="login.html" class="portal-link">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M9 12l2 2 4-4"/>
-          <circle cx="12" cy="12" r="10"/>
-        </svg>
-        Access HIS Portal
-      </a>
-    </div>
+    <footer class="portal-link-container">
+      <div class="portal-links">
+        <a href="login.html?force_login=true" class="portal-link primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M9 12l2 2 4-4"/>
+            <circle cx="12" cy="12" r="10"/>
+          </svg>
+          Access HIS Portal
+        </a>
+        <a href="#" class="portal-link secondary" id="help-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          Need Help?
+        </a>
+      </div>
+    </footer>
 
     <!-- Toast Notifications -->
     <div id="toast-container" class="toast-container"></div>
   </div>
+
+  <!-- Session Management Script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Display user email in session bar
+      try {
+        const session = sessionStorage.getItem('ticketing_session');
+        if (session) {
+          const sessionData = JSON.parse(session);
+          const emailDisplay = document.getElementById('session-email');
+          if (emailDisplay && sessionData.email) {
+            emailDisplay.textContent = sessionData.email;
+          }
+        }
+      } catch (error) {
+        console.warn('Could not display session email');
+      }
+
+      // Logout functionality
+      const logoutBtn = document.getElementById('logout-btn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', function() {
+          sessionStorage.removeItem('ticketing_session');
+          sessionStorage.removeItem('session_signature');
+          window.location.href = '../index.html';
+        });
+      }
+
+      // Tab functionality
+      const trackTab = document.getElementById('track-tab');
+      const submitTab = document.getElementById('submit-tab');
+      const trackSection = document.getElementById('track-section');
+      const submitSection = document.getElementById('submit-section');
+
+      function switchToTab(activeTab, activeSection, inactiveTab, inactiveSection) {
+        activeTab.classList.add('active');
+        activeTab.setAttribute('aria-selected', 'true');
+        inactiveTab.classList.remove('active');
+        inactiveTab.setAttribute('aria-selected', 'false');
+        
+        activeSection.classList.add('active');
+        inactiveSection.classList.remove('active');
+      }
+
+      trackTab.addEventListener('click', function() {
+        switchToTab(trackTab, trackSection, submitTab, submitSection);
+      });
+
+      submitTab.addEventListener('click', function() {
+        switchToTab(submitTab, submitSection, trackTab, trackSection);
+      });
+
+      // Form reset functionality
+      const resetBtn = document.getElementById('reset-form');
+      const submitForm = document.getElementById('submit-form');
+      
+      if (resetBtn && submitForm) {
+        resetBtn.addEventListener('click', function() {
+          if (confirm('Are you sure you want to reset the form? All entered data will be lost.')) {
+            submitForm.reset();
+          }
+        });
+      }
+
+      // Quick actions functionality
+      const quickActionBtns = document.querySelectorAll('.quick-action-btn');
+      quickActionBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+          const action = this.dataset.action;
+          // Add your quick action logic here
+          console.log('Quick action clicked:', action);
+        });
+      });
+
+      // Help link functionality
+      const helpLink = document.getElementById('help-link');
+      if (helpLink) {
+        helpLink.addEventListener('click', function(e) {
+          e.preventDefault();
+          // Add help modal or redirect logic here
+          alert('Help documentation will be available soon!');
+        });
+      }
+
+      // Character counter for title and description
+      const titleInput = document.getElementById('ticket-title');
+      const descInput = document.getElementById('ticket-desc');
+      
+      function addCharacterCounter(input, maxLength) {
+        const counter = document.createElement('div');
+        counter.className = 'character-counter';
+        counter.textContent = `0/${maxLength}`;
+        input.parentNode.appendChild(counter);
+        
+        input.addEventListener('input', function() {
+          const current = this.value.length;
+          counter.textContent = `${current}/${maxLength}`;
+          counter.style.color = current > maxLength * 0.9 ? 'var(--warning)' : 'var(--text-light)';
+        });
+      }
+      
+      if (titleInput) addCharacterCounter(titleInput, 100);
+      if (descInput) addCharacterCounter(descInput, 1000);
+    });
+  </script>
 </body>
 </html>

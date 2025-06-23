@@ -1,0 +1,145 @@
+<section id="dashboard-section" class="content-section active">
+  <!-- Quick Stats -->
+  <div class="stats-overview">
+    <div class="stat-card">
+      <div class="stat-header">
+        <h3>Total Tickets</h3>
+        <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14,2 14,8 20,8"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-number" id="total-tickets">0</div>
+        <div class="stat-change positive">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <polyline points="22,12 18,8 14,12"/>
+            <path d="M16 8v13a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V8"/>
+          </svg>
+          +12% from last month
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-header">
+        <h3>Open Tickets</h3>
+        <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 6v6l4 2"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-number" id="open-tickets">0</div>
+        <div class="stat-change negative">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <polyline points="22,12 18,16 14,12"/>
+            <path d="M16 16v-13a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v13"/>
+          </svg>
+          +5% from last week
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-header">
+        <h3>Resolved Today</h3>
+        <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22,4 12,14.01 9,11.01"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-number" id="resolved-today">0</div>
+        <div class="stat-change positive">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <polyline points="22,12 18,8 14,12"/>
+            <path d="M16 8v13a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V8"/>
+          </svg>
+          +8% from yesterday
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-header">
+        <h3>Avg Resolution Time</h3>
+        <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12,6 12,12 16,14"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-number" id="avg-resolution">0h</div>
+        <div class="stat-change positive">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <polyline points="22,12 18,8 14,12"/>
+            <path d="M16 8v13a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V8"/>
+          </svg>
+          -15% improvement
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard Grid -->
+  <div class="dashboard-grid">
+    <div class="dashboard-card">
+      <div class="card-header">
+        <h3>Recent Tickets</h3>
+        <a href="#tickets" class="card-action-link" data-section="tickets">View All</a>
+      </div>
+      <div class="card-content">
+        <div class="recent-tickets" id="recent-tickets">
+          <p>Loading recent tickets...</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="dashboard-card">
+      <div class="card-header">
+        <h3>Status Distribution</h3>
+        <button class="card-action-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
+          </svg>
+        </button>
+      </div>
+      <div class="card-content">
+        <div id="status-stats" class="status-stats">
+          <p>Loading status distribution...</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="dashboard-card">
+      <div class="card-header">
+        <h3>Team Performance</h3>
+        <button class="card-action-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
+          </svg>
+        </button>
+      </div>
+      <div class="card-content">
+        <div class="team-performance">
+          <table id="team-stats">
+            <thead>
+              <tr>
+                <th>Team</th>
+                <th>Total</th>
+                <th>Open</th>
+                <th>Completion Rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="4">Loading team data...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

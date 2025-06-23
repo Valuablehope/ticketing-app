@@ -1,41 +1,93 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HIS Portal Dashboard</title>
-
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
   
-  <!-- Styles -->
-  <link rel="stylesheet" href="css/style.css" />
-
-  <!-- Supabase client -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js" defer></script>
+  <!-- CSS Files -->
+  <link rel="stylesheet" href="css/base/variables.css">
+  <link rel="stylesheet" href="css/base/reset.css">
+  <link rel="stylesheet" href="css/base/utilities.css">
+  <link rel="stylesheet" href="css/components/buttons.css">
+  <link rel="stylesheet" href="css/components/forms.css">
+  <link rel="stylesheet" href="css/components/cards.css">
+  <link rel="stylesheet" href="css/components/tables.css">
+  <link rel="stylesheet" href="css/components/modals.css">
+  <link rel="stylesheet" href="css/components/navigation.css">
+  <link rel="stylesheet" href="css/components/toast-notifications.css">
+  <link rel="stylesheet" href="css/components/loading-states.css">
+  <link rel="stylesheet" href="css/components/search-filters.css">
+  <link rel="stylesheet" href="css/pages/portal.css">
   
-  <!-- Portal JavaScript -->
-  <script src="js/portal.js" defer></script>
+  <style>
+    html,body{height:100%;margin:0;padding:0;overflow-x:hidden}
+    .portal-body,.dashboard-container,.dashboard-main{min-height:100vh;height:100%}
+    .dashboard-main{flex:1;display:flex;flex-direction:column}
+    .dashboard-content{flex:1;overflow-y:auto}
+    .modal{position:fixed;top:0;left:0;width:100vw;height:100vh;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);z-index:1000}
+    .modal-content{position:relative;margin:2rem;max-width:90vw;max-height:90vh}
+    .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;flex-wrap:wrap;gap:1rem}
+    .section-title h2{font-size:1.875rem;font-weight:700;color:var(--text);margin:0 0 0.5rem 0}
+    .section-title p{color:var(--text-muted);margin:0}
+    .section-actions{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+    .analytics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:2rem}
+    .coming-soon{text-align:center;padding:4rem 2rem;font-size:1.125rem;color:var(--text-muted)}
+    @media(max-width:768px){
+      .section-header{flex-direction:column;align-items:stretch}
+      .section-actions{flex-direction:column;align-items:stretch}
+      .search-container{max-width:100%}
+      .filter-container{display:flex;gap:0.5rem}
+      .filter-select{flex:1}
+      .analytics-grid{grid-template-columns:1fr}
+      .modal{padding:1rem}
+      .modal-content{margin:0;max-width:100%;max-height:100%;width:100%;height:100%;border-radius:0}
+      .modal-body{max-height:calc(100vh - 120px)}
+    }
+  </style>
 </head>
 <body class="portal-body">
-  <!-- Loading Screen -->
+  <!-- Loading/Error Screens -->
   <div id="loading-screen" class="loading-screen">
     <div class="loading-content">
       <div class="loading-spinner"></div>
       <h2>Loading Dashboard...</h2>
-      <p>Please wait while we fetch your data</p>
+      <p>Verifying authentication and fetching your data</p>
+    </div>
+  </div>
+
+  <div id="auth-error" class="init-error" style="display:none">
+    <div class="error-content">
+      <h2>🔒 Authentication Required</h2>
+      <p id="auth-error-message">You need to be logged in to access the HIS Portal.</p>
+      <div>
+        <button class="login-btn" onclick="redirectToLogin()">Go to Login</button>
+        <button class="retry-btn" onclick="retryAuthentication()">Retry</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="init-error" class="init-error" style="display:none">
+    <div class="error-content">
+      <h2>⚠️ System Error</h2>
+      <p id="init-error-message">Failed to initialize the portal. Please try refreshing the page.</p>
+      <div>
+        <button class="retry-btn" onclick="location.reload()">Refresh Page</button>
+        <button class="login-btn" onclick="redirectToLogin()">Back to Login</button>
+      </div>
     </div>
   </div>
 
   <!-- Main Dashboard -->
-  <div class="dashboard-container">
-    <!-- Sidebar Navigation -->
+  <div class="dashboard-container" style="display:none" id="dashboard-container">
+    <!-- Sidebar -->
     <aside class="dashboard-sidebar">
       <div class="sidebar-header">
         <div class="logo">
           <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M9 12l2 2 4-4"/>
-            <circle cx="12" cy="12" r="10"/>
+            <path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/>
           </svg>
           <span class="logo-text">HIS Portal</span>
         </div>
@@ -48,33 +100,22 @@
             <li class="nav-item">
               <a href="#dashboard" class="nav-link active" data-section="dashboard">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                  <line x1="9" y1="9" x2="15" y2="9"/>
-                  <line x1="9" y1="15" x2="15" y2="15"/>
-                </svg>
-                Dashboard
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="15" x2="15" y2="15"/>
+                </svg>Dashboard
               </a>
             </li>
             <li class="nav-item">
               <a href="#tickets" class="nav-link" data-section="tickets">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                  <polyline points="14,2 14,8 20,8"/>
-                  <line x1="16" y1="13" x2="8" y2="13"/>
-                  <line x1="16" y1="17" x2="8" y2="17"/>
-                  <polyline points="10,9 9,9 8,9"/>
-                </svg>
-                All Tickets
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>All Tickets
               </a>
             </li>
             <li class="nav-item">
               <a href="#analytics" class="nav-link" data-section="analytics">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <line x1="18" y1="20" x2="18" y2="10"/>
-                  <line x1="12" y1="20" x2="12" y2="4"/>
-                  <line x1="6" y1="20" x2="6" y2="14"/>
-                </svg>
-                Analytics
+                  <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+                </svg>Analytics
               </a>
             </li>
           </ul>
@@ -84,24 +125,19 @@
           <h3 class="nav-section-title">Management</h3>
           <ul class="nav-list">
             <li class="nav-item">
-              <a href="create-user.html" class="nav-link">
+              <a href="create-user.html" class="nav-link external-link">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                  <circle cx="8.5" cy="7" r="4"/>
-                  <line x1="20" y1="8" x2="20" y2="14"/>
-                  <line x1="23" y1="11" x2="17" y2="11"/>
-                </svg>
-                Create User
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>
+                </svg>Create User
               </a>
             </li>
-            <li class="nav-item">
-              <a href="ticket-submission.html" class="nav-link">
+            <!-- <li class="nav-item">
+              <a href="public/ticket-submission.html" class="nav-link external-link">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path d="M12 2v20M2 12h20"/>
-                </svg>
-                Submit Ticket
+                </svg>Submit Ticket
               </a>
-            </li>
+            </li> -->
           </ul>
         </div>
       </nav>
@@ -110,36 +146,30 @@
         <div class="user-profile">
           <div class="user-avatar">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
             </svg>
           </div>
           <div class="user-info">
-            <span class="user-name">Admin User</span>
-            <span class="user-role">Administrator</span>
+            <span class="user-name" id="user-name">Loading...</span>
+            <span class="user-role" id="user-role">User</span>
           </div>
         </div>
         <button class="logout-btn" onclick="handleLogout()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16,17 21,12 16,7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-          Logout
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>Logout
         </button>
       </div>
     </aside>
 
     <!-- Main Content -->
     <main class="dashboard-main">
-      <!-- Top Header -->
+      <!-- Header -->
       <header class="dashboard-header">
         <div class="header-left">
           <button class="mobile-menu-btn" id="mobile-menu-btn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <line x1="3" y1="6" x2="21" y2="6"/>
-              <line x1="3" y1="12" x2="21" y2="12"/>
-              <line x1="3" y1="18" x2="21" y2="18"/>
+              <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
             </svg>
           </button>
           <div class="breadcrumb">
@@ -150,17 +180,14 @@
         <div class="header-right">
           <button class="refresh-btn" onclick="refreshDashboard()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <polyline points="23,4 23,10 17,10"/>
-              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-            </svg>
-            Refresh
+              <polyline points="23,4 23,10 17,10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+            </svg><span>Refresh</span>
           </button>
           <div class="user-menu">
             <button class="user-menu-btn">
               <div class="user-avatar-small">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
                 </svg>
               </div>
             </button>
@@ -178,18 +205,15 @@
               <div class="stat-header">
                 <h3>Total Tickets</h3>
                 <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                  <polyline points="14,2 14,8 20,8"/>
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/>
                 </svg>
               </div>
               <div class="stat-content">
                 <div class="stat-number" id="total-tickets">0</div>
                 <div class="stat-change positive">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <polyline points="22,12 18,8 14,12"/>
-                    <path d="M16 8v13a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V8"/>
-                  </svg>
-                  +12% from last month
+                    <polyline points="22,12 18,8 14,12"/><path d="M16 8v13a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V8"/>
+                  </svg>+12% from last month
                 </div>
               </div>
             </div>
@@ -198,18 +222,15 @@
               <div class="stat-header">
                 <h3>Open Tickets</h3>
                 <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <circle cx="12" cy="12" r="10"/>
-                  <path d="M12 6v6l4 2"/>
+                  <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
                 </svg>
               </div>
               <div class="stat-content">
                 <div class="stat-number" id="open-tickets">0</div>
                 <div class="stat-change negative">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <polyline points="22,12 18,16 14,12"/>
-                    <path d="M16 16v-13a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v13"/>
-                  </svg>
-                  +5% from last week
+                    <polyline points="22,12 18,16 14,12"/><path d="M16 16v-13a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v13"/>
+                  </svg>+5% from last week
                 </div>
               </div>
             </div>
@@ -218,18 +239,15 @@
               <div class="stat-header">
                 <h3>Resolved Today</h3>
                 <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                  <polyline points="22,4 12,14.01 9,11.01"/>
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/>
                 </svg>
               </div>
               <div class="stat-content">
                 <div class="stat-number" id="resolved-today">0</div>
                 <div class="stat-change positive">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <polyline points="22,12 18,8 14,12"/>
-                    <path d="M16 8v13a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V8"/>
-                  </svg>
-                  +8% from yesterday
+                    <polyline points="22,12 18,8 14,12"/><path d="M16 8v13a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V8"/>
+                  </svg>+8% from yesterday
                 </div>
               </div>
             </div>
@@ -238,115 +256,69 @@
               <div class="stat-header">
                 <h3>Avg Resolution Time</h3>
                 <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <circle cx="12" cy="12" r="10"/>
-                  <polyline points="12,6 12,12 16,14"/>
+                  <circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/>
                 </svg>
               </div>
               <div class="stat-content">
                 <div class="stat-number" id="avg-resolution">0h</div>
                 <div class="stat-change positive">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <polyline points="22,12 18,8 14,12"/>
-                    <path d="M16 8v13a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V8"/>
-                  </svg>
-                  -15% improvement
+                    <polyline points="22,12 18,8 14,12"/><path d="M16 8v13a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V8"/>
+                  </svg>-15% improvement
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Detailed Stats Grid -->
+          <!-- Dashboard Grid -->
           <div class="dashboard-grid">
-            <!-- Status Distribution -->
             <div class="dashboard-card">
-              <div class="card-header">
-                <h3>Tickets by Status</h3>
-                <button class="card-action-btn">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <circle cx="12" cy="12" r="1"/>
-                    <circle cx="19" cy="12" r="1"/>
-                    <circle cx="5" cy="12" r="1"/>
-                  </svg>
-                </button>
-              </div>
-              <div class="card-content">
-                <div class="status-list" id="status-stats">
-                  <!-- Status items will be populated by JavaScript -->
-                </div>
-              </div>
-            </div>
-
-            <!-- Assignee Workload -->
-            <div class="dashboard-card">
-              <div class="card-header">
-                <h3>Team Workload</h3>
-                <button class="card-action-btn">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <circle cx="12" cy="12" r="1"/>
-                    <circle cx="19" cy="12" r="1"/>
-                    <circle cx="5" cy="12" r="1"/>
-                  </svg>
-                </button>
-              </div>
-              <div class="card-content">
-                <div class="workload-table-container">
-                  <table class="workload-table" id="assignee-stats">
-                    <thead>
-                      <tr>
-                        <th>Assignee</th>
-                        <th>Open</th>
-                        <th>Closed</th>
-                        <th>Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <!-- Assignee data will be populated by JavaScript -->
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            <!-- Team Performance -->
-            <div class="dashboard-card">
-              <div class="card-header">
-                <h3>Team Performance</h3>
-                <button class="card-action-btn">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <circle cx="12" cy="12" r="1"/>
-                    <circle cx="19" cy="12" r="1"/>
-                    <circle cx="5" cy="12" r="1"/>
-                  </svg>
-                </button>
-              </div>
-              <div class="card-content">
-                <div class="team-table-container">
-                  <table class="team-table" id="team-stats">
-                    <thead>
-                      <tr>
-                        <th>Team</th>
-                        <th>Total</th>
-                        <th>Open</th>
-                        <th>Completion %</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <!-- Team data will be populated by JavaScript -->
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            <!-- Recent Activity -->
-            <div class="dashboard-card span-full">
               <div class="card-header">
                 <h3>Recent Tickets</h3>
                 <a href="#tickets" class="card-action-link" data-section="tickets">View All</a>
               </div>
               <div class="card-content">
                 <div class="recent-tickets" id="recent-tickets">
-                  <!-- Recent tickets will be populated by JavaScript -->
+                  <p>Loading recent tickets...</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="dashboard-card">
+              <div class="card-header">
+                <h3>Status Distribution</h3>
+                <button class="card-action-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="card-content">
+                <div id="status-stats" class="status-stats">
+                  <p>Loading status distribution...</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="dashboard-card">
+              <div class="card-header">
+                <h3>Team Performance</h3>
+                <button class="card-action-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="card-content">
+                <div class="team-performance">
+                  <table id="team-stats">
+                    <thead>
+                      <tr><th>Team</th><th>Total</th><th>Open</th><th>Completion Rate</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr><td colspan="4">Loading team data...</td></tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
@@ -362,11 +334,12 @@
             </div>
             <div class="section-actions">
               <div class="search-container">
-                <input type="text" id="ticket-search" class="search-input" placeholder="Search tickets...">
-                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <circle cx="11" cy="11" r="8"/>
-                  <path d="M21 21l-4.35-4.35"/>
-                </svg>
+                <div class="search-wrapper">
+                  <input type="text" id="ticket-search" class="search-input" placeholder="Search tickets...">
+                  <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                </div>
               </div>
               <div class="filter-container">
                 <select id="status-filter" class="filter-select">
@@ -384,133 +357,66 @@
                 </select>
               </div>
               <div class="view-controls">
-                <button class="view-btn active" data-view="table">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M3 6h18M3 12h18M3 18h18"/>
-                  </svg>
-                  Table
-                </button>
-                <button class="view-btn" data-view="cards">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <rect x="3" y="3" width="6" height="6" rx="1"/>
-                    <rect x="15" y="3" width="6" height="6" rx="1"/>
-                    <rect x="3" y="15" width="6" height="6" rx="1"/>
-                    <rect x="15" y="15" width="6" height="6" rx="1"/>
-                  </svg>
-                  Cards
-                </button>
+                <div class="view-toggle">
+                  <button class="view-btn active" data-view="table">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M3 6h18M3 12h18m-9 6h9"/>
+                    </svg>Table
+                  </button>
+                  <button class="view-btn" data-view="cards">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <rect x="3" y="3" width="18" height="7"/><rect x="3" y="14" width="18" height="7"/>
+                    </svg>Cards
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Bulk Actions -->
-          <div class="bulk-actions">
-            <div class="bulk-select">
-              <input type="checkbox" id="select-all" class="select-all-checkbox">
-              <label for="select-all">Select All</label>
-            </div>
-            <button class="bulk-action-btn" disabled>
-              Actions
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <polyline points="6,9 12,15 18,9"/>
-              </svg>
-            </button>
-            <button class="clear-filters-btn" onclick="clearFilters()">
-              Clear Filters
-            </button>
-          </div>
-
           <!-- Table View -->
-          <div id="table-view" class="table-view active">
-            <div class="tickets-table-container">
-              <table class="tickets-table" id="tickets-table">
+          <div id="table-view" class="tickets-container active">
+            <div class="table-container">
+              <table class="enhanced-table" id="tickets-table">
                 <thead>
                   <tr>
-                    <th class="checkbox-col">
-                      <input type="checkbox" class="header-checkbox">
-                    </th>
-                    <th class="sortable" data-sort="ticket_number">
-                      Ticket ID
-                      <svg class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <polyline points="6,9 12,15 18,9"/>
-                      </svg>
-                    </th>
-                    <th class="sortable" data-sort="title">
-                      Title
-                      <svg class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <polyline points="6,9 12,15 18,9"/>
-                      </svg>
-                    </th>
-                    <th class="sortable" data-sort="status">
-                      Status
-                      <svg class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <polyline points="6,9 12,15 18,9"/>
-                      </svg>
-                    </th>
-                    <th class="sortable" data-sort="priority">
-                      Priority
-                      <svg class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <polyline points="6,9 12,15 18,9"/>
-                      </svg>
-                    </th>
-                    <th>Assignee</th>
-                    <th>Location</th>
-                    <th class="sortable" data-sort="created_at">
-                      Created
-                      <svg class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <polyline points="6,9 12,15 18,9"/>
-                      </svg>
-                    </th>
-                    <th>Actions</th>
+                    <th class="col-checkbox"><input type="checkbox" class="header-checkbox"></th>
+                    <th class="col-id sortable" data-sort="ticket_number">ID</th>
+                    <th class="col-title sortable" data-sort="title">Title</th>
+                    <th class="col-status sortable" data-sort="status">Status</th>
+                    <th class="col-priority sortable" data-sort="priority">Priority</th>
+                    <th class="col-assignee sortable" data-sort="assigned_to">Assignee</th>
+                    <th class="col-date sortable" data-sort="created_at">Created</th>
+                    <th class="col-actions">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <!-- Tickets will be populated by JavaScript -->
+                  <tr><td colspan="8">Loading tickets...</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
 
           <!-- Cards View -->
-          <div id="cards-view" class="cards-view">
-            <div id="tickets-cards" class="tickets-cards">
-              <!-- Cards will be populated by JavaScript -->
+          <div id="cards-view" class="tickets-cards">
+            <div class="cards-grid" id="tickets-cards">
+              <p>Loading tickets...</p>
             </div>
           </div>
 
-          <!-- Empty State -->
-          <div id="empty-state" class="empty-state" style="display: none;">
-            <div class="empty-state-content">
-              <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14,2 14,8 20,8"/>
-                <line x1="16" y1="13" x2="8" y2="13"/>
-                <line x1="16" y1="17" x2="8" y2="17"/>
-                <polyline points="10,9 9,9 8,9"/>
-              </svg>
-              <h3>No tickets found</h3>
-              <p>Try adjusting your search criteria or clear the filters.</p>
-              <button class="btn-primary" onclick="clearFilters()">Clear Filters</button>
-            </div>
-          </div>
-
+          <!-- Pagination -->
           <div class="table-pagination">
             <div class="pagination-info">
-              Showing <span id="pagination-showing">0</span> of <span id="pagination-total">0</span> tickets
+              Showing <span id="pagination-showing">1-10</span> of <span id="pagination-total">0</span> tickets
             </div>
             <div class="pagination-controls">
-              <button class="pagination-btn" id="prev-page" disabled>
+              <button id="prev-page" class="pagination-btn" disabled>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <polyline points="15,18 9,12 15,6"/>
-                </svg>
-                Previous
+                </svg>Previous
               </button>
-              <div class="pagination-numbers" id="pagination-numbers">
-                <!-- Page numbers will be populated by JavaScript -->
-              </div>
-              <button class="pagination-btn" id="next-page">
-                Next
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <div id="pagination-numbers" class="pagination-numbers"></div>
+              <button id="next-page" class="pagination-btn">
+                Next<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <polyline points="9,18 15,12 9,6"/>
                 </svg>
               </button>
@@ -529,20 +435,32 @@
 
           <div class="analytics-grid">
             <div class="dashboard-card">
-              <div class="card-header">
-                <h3>Ticket Trends</h3>
-              </div>
+              <div class="card-header"><h3>Ticket Trends</h3></div>
               <div class="card-content">
                 <p class="coming-soon">📊 Chart visualization coming soon</p>
               </div>
             </div>
 
             <div class="dashboard-card">
-              <div class="card-header">
-                <h3>Performance Metrics</h3>
-              </div>
+              <div class="card-header"><h3>Performance Metrics</h3></div>
               <div class="card-content">
                 <p class="coming-soon">📈 Performance analytics coming soon</p>
+              </div>
+            </div>
+
+            <div class="dashboard-card">
+              <div class="card-header"><h3>Assignee Workload</h3></div>
+              <div class="card-content">
+                <div class="assignee-workload">
+                  <table id="assignee-stats">
+                    <thead>
+                      <tr><th>Assignee</th><th>Open</th><th>Closed</th><th>Total</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr><td colspan="4">Loading assignee data...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
@@ -554,22 +472,598 @@
   <!-- Toast Container -->
   <div id="toast-container" class="toast-container"></div>
 
-  <!-- Ticket Detail Modal -->
+  <!-- Modals -->
   <div id="ticket-modal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
         <h3 id="modal-title">Ticket Details</h3>
         <button class="modal-close" onclick="closeTicketModal()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
         </button>
       </div>
-      <div class="modal-body" id="modal-body">
-        <!-- Modal content will be populated by JavaScript -->
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeTicketModal()">Close</button>
+        <button type="button" class="btn btn-primary" onclick="editCurrentTicket()">Edit Ticket</button>
       </div>
     </div>
   </div>
+
+  <div id="edit-ticket-modal" class="modal">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <h3 id="edit-modal-title">Edit Ticket</h3>
+        <button class="modal-close" onclick="closeEditModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="edit-ticket-form" class="edit-ticket-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Title</label>
+              <input type="text" id="edit-title" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Status</label>
+              <select id="edit-status" class="form-control">
+                <option value="Open">Open</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Resolved">Resolved</option>
+                <option value="Closed">Closed</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Priority</label>
+              <select id="edit-priority" class="form-control">
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Assigned To</label>
+              <select id="edit-assigned-to" class="form-control">
+                <option value="">Unassigned</option>
+                <!-- Options will be populated by JavaScript -->
+              </select>
+            </div>
+          </div>
+          <div class="form-group full-width">
+            <label class="form-label">Description</label>
+            <textarea id="edit-description" class="form-control" rows="4"></textarea>
+          </div>
+          <input type="hidden" id="edit-ticket-id">
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveTicketChanges()" id="save-ticket-btn">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Wrap everything in an immediately invoked function to avoid global scope issues
+    (function() {
+      // Global protection against multiple script execution
+      if (window.portalEventListenersSetup) {
+        console.log('⚠️ Portal script already loaded, skipping duplicate setup');
+        return;
+      }
+      window.portalEventListenersSetup = true;
+
+      // Global configuration and variables
+      window.SUPABASE_CONFIG = {
+        url: 'https://rkdblbnmtzyrapfemswq.supabase.co',
+        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrZGJsYm5tdHp5cmFwZmVtc3dxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1ODQyNTgsImV4cCI6MjA2NjE2MDI1OH0.TY7Ml-S-knKMNQ-HKylGLbpXIu9wHqGAZDHHAq4rRJc'
+      };
+      let currentTicketForEdit = null;
+      let appInitialized = false;
+
+    // IMMEDIATELY prevent any modal functions from working during load
+    let blockedCalls = [];
+    
+    // Define safe placeholder functions that queue calls until ready
+    window.showTicketDetails = function(ticketId) {
+      if (!appInitialized) {
+        console.log('🚫 Blocked showTicketDetails during initialization:', ticketId);
+        blockedCalls.push({type: 'show', ticketId});
+        return;
+      }
+      // Will be replaced by real function later
+    };
+    
+    window.editTicket = function(ticketId) {
+      if (!appInitialized) {
+        console.log('🚫 Blocked editTicket during initialization:', ticketId);
+        blockedCalls.push({type: 'edit', ticketId});
+        return;
+      }
+      // Will be replaced by real function later
+    };
+
+    // Force hide modals on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('🔒 DOM loaded - forcing modals hidden');
+      const ticketModal = document.getElementById('ticket-modal');
+      const editModal = document.getElementById('edit-ticket-modal');
+      
+      if (ticketModal) {
+        ticketModal.style.display = 'none';
+        ticketModal.style.visibility = 'hidden';
+      }
+      if (editModal) {
+        editModal.style.display = 'none';
+        editModal.style.visibility = 'hidden';
+      }
+    });
+
+    // Function to populate the "Assigned To" dropdown
+    async function populateAssigneeDropdown() {
+      try {
+        const dropdown = document.getElementById('edit-assigned-to');
+        if (!dropdown) {
+          console.warn('Assigned to dropdown not found');
+          return;
+        }
+
+        // Clear existing options except the first "Unassigned" option
+        dropdown.innerHTML = '<option value="">Unassigned</option>';
+
+        // Get users from the data service
+        if (window.app?.services?.data) {
+          const users = window.app.services.data.getUsers();
+          
+          if (users && users.length > 0) {
+            // Filter for assignable users (those with appropriate roles)
+            const assignableUsers = users.filter(user => {
+              const role = user.role?.toLowerCase();
+              return role && ['admin', 'technician', 'support', 'staff', 'manager'].includes(role);
+            });
+
+            // Add each assignable user to the dropdown
+            assignableUsers.forEach(user => {
+              const option = document.createElement('option');
+              option.value = user.id;
+              option.textContent = user.full_name || user.email || `User ${user.id}`;
+              dropdown.appendChild(option);
+            });
+
+            console.log(`✅ Populated assignee dropdown with ${assignableUsers.length} users`);
+          } else {
+            console.warn('⚠️ No users available for assignment');
+          }
+        } else {
+          // Fallback: try to load users directly from Supabase if data service isn't available
+          if (window.SUPABASE_CONFIG && typeof supabase !== 'undefined') {
+            const supabaseClient = supabase.createClient(
+              window.SUPABASE_CONFIG.url, 
+              window.SUPABASE_CONFIG.anonKey
+            );
+            
+            const { data: users, error } = await supabaseClient
+              .from('his_users')
+              .select('id, email, full_name, role')
+              .order('full_name');
+
+            if (error) {
+              console.error('Error loading users for dropdown:', error);
+              return;
+            }
+
+            if (users && users.length > 0) {
+              const assignableUsers = users.filter(user => {
+                const role = user.role?.toLowerCase();
+                return role && ['admin', 'technician', 'support', 'staff', 'manager'].includes(role);
+              });
+
+              assignableUsers.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = user.full_name || user.email || `User ${user.id}`;
+                dropdown.appendChild(option);
+              });
+
+              console.log(`✅ Populated assignee dropdown with ${assignableUsers.length} users (fallback)`);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error populating assignee dropdown:', error);
+      }
+    }
+
+    // Real implementation functions (will replace placeholders when app is ready)
+    function realShowTicketDetails(ticketId) {
+      if (window.app?.services?.data && window.app?.services?.ui) {
+        const ticket = window.app.services.data.getTicket(ticketId);
+        if (ticket) {
+          currentTicketForEdit = ticket;
+          window.app.services.ui.showTicketModal(ticket, window.app.services.data.data);
+          const modal = document.getElementById('ticket-modal');
+          if (modal) {
+            modal.style.visibility = 'visible';
+            modal.style.display = 'flex';
+          }
+        }
+      }
+    }
+
+    function realEditTicket(ticketId) {
+      if (window.app?.services?.data) {
+        const ticket = window.app.services.data.getTicket(ticketId);
+        if (ticket) {
+          // Populate the dropdown first
+          populateAssigneeDropdown();
+          
+          // Then populate the ticket data after a brief delay
+          setTimeout(() => {
+            const fields = [
+              { id: 'edit-ticket-id', value: ticket.id },
+              { id: 'edit-title', value: ticket.title || '' },
+              { id: 'edit-description', value: ticket.description || '' },
+              { id: 'edit-status', value: ticket.status || 'Open' },
+              { id: 'edit-priority', value: ticket.priority || 'Medium' },
+              { id: 'edit-assigned-to', value: ticket.assigned_to || '' }
+            ];
+
+            fields.forEach(field => {
+              const element = document.getElementById(field.id);
+              if (element) {
+                element.value = field.value;
+              }
+            });
+
+            document.getElementById('edit-modal-title').textContent = 
+              `Edit Ticket #${ticket.ticket_number || ticket.id.slice(0, 8)}`;
+            
+            const editModal = document.getElementById('edit-ticket-modal');
+            if (editModal) {
+              editModal.style.visibility = 'visible';
+              editModal.style.display = 'flex';
+            }
+          }, 100);
+        }
+      }
+    }
+
+    // Function to safely initialize the app and replace placeholder functions
+    function initializeModalFunctions() {
+      console.log('✅ Replacing placeholder functions with real implementations');
+      
+      // Replace the placeholder functions with real ones
+      window.showTicketDetails = realShowTicketDetails;
+      window.editTicket = realEditTicket;
+      
+      // Mark as initialized
+      appInitialized = true;
+      
+      // Process any queued calls (though there shouldn't be any in normal operation)
+      if (blockedCalls.length > 0) {
+        console.log('⚠️ Processing', blockedCalls.length, 'queued modal calls');
+        blockedCalls.forEach(call => {
+          if (call.type === 'show') realShowTicketDetails(call.ticketId);
+          if (call.type === 'edit') realEditTicket(call.ticketId);
+        });
+        blockedCalls = [];
+      }
+    }
+
+    // Global function for app.js to call when ready
+    window.markAppAsInitialized = function() {
+      initializeModalFunctions();
+      console.log('🎉 App manually marked as initialized by app.js');
+    };
+
+    // Fallback timeout initialization
+    setTimeout(() => {
+      if (!appInitialized) {
+        console.log('⏰ Timeout reached - force initializing modal functions');
+        initializeModalFunctions();
+      }
+    }, 3000);
+
+    // === GLOBAL FUNCTIONS - ACCESSIBLE FROM HTML ===
+    
+    window.closeTicketModal = function() {
+      const modal = document.getElementById('ticket-modal');
+      if (modal) {
+        modal.style.display = 'none';
+        modal.style.visibility = 'hidden';
+      }
+    };
+
+    window.editCurrentTicket = function() {
+      if (currentTicketForEdit && appInitialized) {
+        window.closeTicketModal();
+        window.editTicket(currentTicketForEdit.id);
+      }
+    };
+
+    window.closeEditModal = function() {
+      const modal = document.getElementById('edit-ticket-modal');
+      if (modal) {
+        modal.style.display = 'none';
+        modal.style.visibility = 'hidden';
+        const form = document.getElementById('edit-ticket-form');
+        if (form) form.reset();
+      }
+    };
+
+    window.saveTicketChanges = async function() {
+      try {
+        const ticketId = document.getElementById('edit-ticket-id').value;
+        const updates = {
+          title: document.getElementById('edit-title').value.trim(),
+          description: document.getElementById('edit-description').value.trim(),
+          status: document.getElementById('edit-status').value,
+          priority: document.getElementById('edit-priority').value,
+          assigned_to: document.getElementById('edit-assigned-to').value.trim() || null
+        };
+
+        if (!updates.title) {
+          window.app?.services?.ui?.showToast('Title is required', 'error');
+          return;
+        }
+
+        const saveBtn = document.querySelector('#edit-ticket-modal .btn-primary');
+        if (saveBtn) {
+          saveBtn.textContent = 'Saving...';
+          saveBtn.disabled = true;
+        }
+
+        if (window.app?.services?.data) {
+          await window.app.services.data.updateTicket(ticketId, updates);
+          window.closeEditModal();
+          window.app.services.ui?.showToast('Ticket updated successfully', 'success');
+          
+          // Refresh the UI
+          if (window.app.services.dashboard) await window.app.services.dashboard.loadDashboardData();
+          if (window.app.services.tickets) window.app.services.tickets.renderTicketsTable();
+        } else {
+          throw new Error('Data service not available');
+        }
+      } catch (error) {
+        console.error('Error updating ticket:', error);
+        window.app?.services?.ui?.showToast('Failed to update ticket: ' + error.message, 'error');
+      } finally {
+        const saveBtn = document.querySelector('#edit-ticket-modal .btn-primary');
+        if (saveBtn) {
+          saveBtn.textContent = 'Save Changes';
+          saveBtn.disabled = false;
+        }
+      }
+    };
+
+    window.handleLogout = function() { 
+      window.app?.services?.auth?.signOut(); 
+    };
+
+    window.refreshDashboard = function() { 
+      window.app?.refreshDashboard(); 
+    };
+
+    window.clearFilters = function() { 
+      window.app?.services?.tickets?.clearFilters(); 
+    };
+
+    window.redirectToLogin = function() { 
+      localStorage.clear(); 
+      sessionStorage.clear(); 
+      location.href = 'login.html'; 
+    };
+
+    window.retryAuthentication = function() { 
+      location.reload(); 
+    };
+
+    // Also populate dropdown when app initializes
+    window.refreshAssigneeDropdown = function() {
+      populateAssigneeDropdown();
+    };
+
+    // Event listeners setup - with protection against multiple additions
+    function setupEventListeners() {
+      if (window.portalEventListenersAdded) {
+        console.log('⚠️ Event listeners already added globally, skipping...');
+        return;
+      }
+      
+      console.log('🎛️ Setting up event listeners (GLOBAL first time)');
+      
+      // Mark as added globally
+      window.portalEventListenersAdded = true;
+
+      // Clear any existing listeners first by cloning elements (nuclear option)
+      const ticketModal = document.getElementById('ticket-modal');
+      const editModal = document.getElementById('edit-ticket-modal');
+      
+      // Force hide modals
+      if (ticketModal) {
+        ticketModal.style.display = 'none';
+        ticketModal.style.visibility = 'hidden';
+      }
+      if (editModal) {
+        editModal.style.display = 'none';
+        editModal.style.visibility = 'hidden';
+      }
+
+      // Define handler functions once
+      const handlers = {
+        ticketModalXClick: function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('🖱️ Ticket modal X button clicked [SINGLE]');
+          window.closeTicketModal();
+        },
+
+        editModalXClick: function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('🖱️ Edit modal X button clicked [SINGLE]');
+          window.closeEditModal();
+        },
+
+        editModalCancel: function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('🖱️ Edit modal Cancel button clicked [SINGLE]');
+          window.closeEditModal();
+        },
+
+        ticketModalClose: function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('🖱️ Ticket modal Close button clicked [SINGLE]');
+          window.closeTicketModal();
+        },
+
+        ticketBgClick: function(e) {
+          if (e.target === ticketModal) {
+            console.log('🖱️ Clicked outside ticket modal [SINGLE]');
+            window.closeTicketModal();
+          }
+        },
+
+        editBgClick: function(e) {
+          if (e.target === editModal) {
+            console.log('🖱️ Clicked outside edit modal [SINGLE]');
+            window.closeEditModal();
+          }
+        },
+
+        contentClick: function(e) {
+          const modalContent = e.target.closest('.modal-content');
+          if (modalContent) {
+            e.stopPropagation();
+          }
+        },
+
+        escKey: function(e) {
+          if (e.key === 'Escape') {
+            if (ticketModal && ticketModal.style.display === 'flex') {
+              console.log('⌨️ ESC pressed - closing ticket modal [SINGLE]');
+              window.closeTicketModal();
+            }
+            if (editModal && editModal.style.display === 'flex') {
+              console.log('⌨️ ESC pressed - closing edit modal [SINGLE]');
+              window.closeEditModal();
+            }
+          }
+        }
+      };
+
+      // Store handlers globally for potential cleanup
+      window.portalHandlers = handlers;
+
+      // Add event listeners using our handlers
+      const addListener = (element, event, handler, description) => {
+        if (element) {
+          element.addEventListener(event, handler);
+          console.log('✅ Added', description);
+          return true;
+        }
+        return false;
+      };
+
+      // Modal close button handlers
+      addListener(
+        document.querySelector('#ticket-modal .modal-close'), 
+        'click', 
+        handlers.ticketModalXClick, 
+        'Ticket modal X button'
+      );
+      
+      addListener(
+        document.querySelector('#edit-ticket-modal .modal-close'), 
+        'click', 
+        handlers.editModalXClick, 
+        'Edit modal X button'
+      );
+      
+      addListener(
+        document.querySelector('#edit-ticket-modal .btn-secondary'), 
+        'click', 
+        handlers.editModalCancel, 
+        'Edit modal Cancel button'
+      );
+      
+      addListener(
+        document.querySelector('#ticket-modal .btn-secondary'), 
+        'click', 
+        handlers.ticketModalClose, 
+        'Ticket modal Close button'
+      );
+
+      // Background clicks
+      if (ticketModal) {
+        ticketModal.addEventListener('click', handlers.ticketBgClick);
+        console.log('✅ Added ticket modal background click');
+      }
+
+      if (editModal) {
+        editModal.addEventListener('click', handlers.editBgClick);
+        console.log('✅ Added edit modal background click');
+      }
+
+      // Document-level handlers
+      document.addEventListener('click', handlers.contentClick);
+      document.addEventListener('keydown', handlers.escKey);
+
+      console.log('🎛️ All event listeners setup complete (GLOBAL)');
+    }
+
+    // Single DOM ready handler
+    function initializeOnDOMReady() {
+      if (window.portalDOMReady) {
+        console.log('⚠️ DOM already processed, skipping...');
+        return;
+      }
+      window.portalDOMReady = true;
+
+      console.log('🔒 DOM loaded - forcing modals hidden (GLOBAL)');
+      setupEventListeners();
+
+      // --- CRITICAL FIX: Prevent clicks inside modal-content from closing modal ---
+      // This ensures that only clicks on the actual background (modal overlay) close the modal
+      document.querySelectorAll('.modal-content').forEach(content => {
+        content.addEventListener('click', function(e) {
+          e.stopPropagation();
+          console.log('🛡️ Stopped propagation from modal content click');
+        });
+      });
+      console.log('🛡️ Added click propagation protection for modal content');
+
+      // Populate dropdown when DOM is ready
+      setTimeout(() => {
+        populateAssigneeDropdown();
+      }, 2000);
+    }
+
+    // Handle both cases: DOM already ready or wait for it
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializeOnDOMReady);
+    } else {
+      // DOM already ready
+      initializeOnDOMReady();
+    }
+
+    })(); // End of IIFE (Immediately Invoked Function Expression)
+  </script>
+
+  <!-- Application Scripts -->
+  <script src="js/auth.js"></script>
+  <script src="js/dataService.js"></script>
+  <script src="js/uiComponents.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/ticketRenderer.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>

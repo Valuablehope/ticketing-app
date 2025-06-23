@@ -1,0 +1,23 @@
+<!-- Authentication Error Screen -->
+<div id="auth-error" class="init-error" style="display: none;">
+  <div class="error-content">
+    <h2>🔒 Authentication Required</h2>
+    <p id="auth-error-message">You need to be logged in to access the HIS Portal.</p>
+    <div>
+      <button class="login-btn" onclick="redirectToLogin()">Go to Login</button>
+      <button class="retry-btn" onclick="retryAuthentication()">Retry</button>
+    </div>
+  </div>
+</div>
+
+<!-- Initialization Error Screen -->
+<div id="init-error" class="init-error" style="display: none;">
+  <div class="error-content">
+    <h2>⚠️ System Error</h2>
+    <p id="init-error-message">Failed to initialize the portal. Please try refreshing the page.</p>
+    <div>
+      <button class="retry-btn" onclick="window.location.reload()">Refresh Page</button>
+      <button class="login-btn" onclick="redirectToLogin()">Back to Login</button>
+    </div>
+  </div>
+</div>

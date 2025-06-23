@@ -12,239 +12,18 @@
   <!-- Supabase -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Inter', sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .login-container {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border-radius: 20px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-      padding: 40px;
-      width: 100%;
-      max-width: 420px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-
-    .logo-section {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-
-    .logo {
-      width: 60px;
-      height: 60px;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      border-radius: 16px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 20px;
-      box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
-    }
-
-    .logo::before {
-      content: "🏥";
-      font-size: 24px;
-    }
-
-    .title {
-      font-size: 28px;
-      font-weight: 700;
-      color: #1a1a1a;
-      margin-bottom: 8px;
-    }
-
-    .subtitle {
-      color: #666;
-      font-size: 16px;
-      font-weight: 400;
-    }
-
-    .form-group {
-      margin-bottom: 20px;
-    }
-
-    .form-group label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 500;
-      color: #374151;
-      font-size: 14px;
-    }
-
-    .input-wrapper {
-      position: relative;
-    }
-
-    .form-input {
-      width: 100%;
-      padding: 16px 20px;
-      border: 2px solid #e5e7eb;
-      border-radius: 12px;
-      font-size: 16px;
-      transition: all 0.3s ease;
-      background: white;
-      color: #1a1a1a;
-    }
-
-    .form-input:focus {
-      outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
-
-    .password-toggle {
-      position: absolute;
-      right: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: #6b7280;
-      font-size: 14px;
-      padding: 4px;
-    }
-
-    .password-toggle:hover {
-      color: #374151;
-    }
-
-    .login-btn {
-      width: 100%;
-      padding: 16px;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .login-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-    }
-
-    .login-btn:active {
-      transform: translateY(0);
-    }
-
-    .login-btn:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    .btn-spinner {
-      display: none;
-      width: 20px;
-      height: 20px;
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      border-radius: 50%;
-      border-top-color: white;
-      animation: spin 1s ease-in-out infinite;
-      margin-right: 8px;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    .back-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      color: #667eea;
-      text-decoration: none;
-      font-weight: 500;
-      margin-top: 20px;
-      padding: 8px 0;
-      transition: color 0.3s ease;
-    }
-
-    .back-btn:hover {
-      color: #764ba2;
-    }
-
-    .error-message {
-      background: #fef2f2;
-      border: 1px solid #fecaca;
-      color: #dc2626;
-      padding: 12px 16px;
-      border-radius: 8px;
-      margin-top: 16px;
-      font-size: 14px;
-      display: none;
-    }
-
-    .success-message {
-      background: #f0fdf4;
-      border: 1px solid #bbf7d0;
-      color: #166534;
-      padding: 12px 16px;
-      border-radius: 8px;
-      margin-top: 16px;
-      font-size: 14px;
-      display: none;
-    }
-
-    .forgot-password {
-      text-align: center;
-      margin-top: 20px;
-    }
-
-    .forgot-password a {
-      color: #667eea;
-      text-decoration: none;
-      font-size: 14px;
-      font-weight: 500;
-    }
-
-    .forgot-password a:hover {
-      text-decoration: underline;
-    }
-
-    .debug-info {
-      background: #f3f4f6;
-      border: 1px solid #d1d5db;
-      padding: 12px;
-      border-radius: 8px;
-      margin-top: 20px;
-      font-size: 12px;
-      color: #374151;
-    }
-
-    @media (max-width: 480px) {
-      .login-container {
-        padding: 30px 20px;
-        margin: 10px;
-      }
-      
-      .title {
-        font-size: 24px;
-      }
-    }
-  </style>
+  <!-- Base styles (required for all pages) -->
+    <link rel="stylesheet" href="css/base/variables.css">
+    <link rel="stylesheet" href="css/base/reset.css">
+    <link rel="stylesheet" href="css/base/utilities.css">
+    
+    <!-- Component styles -->
+    <link rel="stylesheet" href="css/components/buttons.css">
+    <link rel="stylesheet" href="css/components/forms.css">
+    
+    <!-- Page-specific styles -->
+    <link rel="stylesheet" href="css/pages/login.css">
+    
 </head>
 <body>
   <div class="login-container">
@@ -252,6 +31,10 @@
       <div class="logo"></div>
       <h1 class="title">Welcome Back</h1>
       <p class="subtitle">Sign in to your HIS Portal account</p>
+    </div>
+
+    <div id="logout-notice" class="logout-notice">
+      You have been signed out. Please log in again to continue.
     </div>
 
     <form id="login-form">
@@ -331,7 +114,6 @@
           SupabaseLib = supabase;
           debugInfo.push('✓ Found global supabase');
         } else {
-          // List all available globals for debugging
           const globals = Object.keys(window).filter(key => 
             key.toLowerCase().includes('supabase') || key.toLowerCase().includes('supa')
           );
@@ -351,9 +133,6 @@
         }
         
         debugInfo.push('✓ Supabase client initialized');
-        //debugInfo.push(`URL: ${SUPABASE_URL}`);
-        //debugInfo.push(`Key: ${SUPABASE_ANON_KEY.substring(0, 20)}...`);
-        
         return true;
       } catch (error) {
         debugInfo.push(`✗ Supabase initialization failed: ${error.message}`);
@@ -366,6 +145,54 @@
     function updateDebugInfo() {
       const debugContent = document.getElementById('debug-content');
       debugContent.innerHTML = debugInfo.join('<br>');
+    }
+
+    // Clear any existing session on page load to ensure fresh login
+    async function clearExistingSession() {
+      if (!supabaseClient) return;
+      
+      try {
+        // Check if there's an existing session
+        const { data: { session }, error } = await supabaseClient.auth.getSession();
+        
+        if (session?.user) {
+          debugInfo.push('○ Found existing session, clearing...');
+          
+          // Check if this is an intentional logout (from URL parameter)
+          const urlParams = new URLSearchParams(window.location.search);
+          const logout = urlParams.get('logout');
+          const forceLogin = urlParams.get('force_login');
+          
+          if (logout === 'true' || forceLogin === 'true') {
+            // Sign out the existing session
+            await supabaseClient.auth.signOut();
+            debugInfo.push('✓ Session cleared due to logout/force_login parameter');
+            
+            // Show logout notice
+            if (logout === 'true') {
+              document.getElementById('logout-notice').style.display = 'block';
+            }
+            
+            // Clean the URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+          } else {
+            // If user has valid session and no logout/force_login, redirect to portal
+            debugInfo.push('✓ Valid session found, redirecting to portal...');
+            window.location.href = 'portal.html';
+            return true; // Indicates redirect is happening
+          }
+        } else {
+          debugInfo.push('○ No existing session found');
+        }
+        
+        updateDebugInfo();
+        return false; // No redirect happening
+      } catch (error) {
+        debugInfo.push(`✗ Session check failed: ${error.message}`);
+        updateDebugInfo();
+        console.error('Session check error:', error);
+        return false;
+      }
     }
 
     // DOM elements
@@ -428,21 +255,22 @@
           }
           
           showMessage(userMessage, 'error');
-        } else if (data?.user) {
+        } else if (data?.user && data?.session) {
           debugInfo.push('✓ Login successful');
           debugInfo.push(`User ID: ${data.user.id}`);
+          debugInfo.push(`Session: ${data.session.access_token ? 'Valid' : 'Invalid'}`);
           updateDebugInfo();
           
           showMessage('Login successful! Redirecting...', 'success');
           
-          // Redirect after success
+          // Redirect after success with a slight delay
           setTimeout(() => {
             window.location.href = 'portal.html';
           }, 1500);
         } else {
-          debugInfo.push('✗ No user data returned');
+          debugInfo.push('✗ Login failed - no user/session data returned');
           updateDebugInfo();
-          showMessage('Login failed. No user data received.', 'error');
+          showMessage('Login failed. Please try again.', 'error');
         }
       } catch (error) {
         debugInfo.push(`✗ Unexpected error: ${error.message}`);
@@ -519,12 +347,11 @@
       document.getElementById('success-message').style.display = 'none';
     }
 
-    // Check if user is already authenticated
-    async function checkExistingSession() {
+    // Handle email confirmation from URL
+    async function handleEmailConfirmation() {
       if (!supabaseClient) return;
       
       try {
-        // Check for email confirmation in URL parameters
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token');
         const type = urlParams.get('type');
@@ -533,7 +360,6 @@
           debugInfo.push('○ Email confirmation token detected');
           updateDebugInfo();
           
-          // Verify the email confirmation
           const { data, error } = await supabaseClient.auth.verifyOtp({
             token_hash: token,
             type: 'email'
@@ -551,49 +377,46 @@
           }
           
           updateDebugInfo();
-          return;
         }
-        
-        // Check for existing session
-        const { data: { session }, error } = await supabaseClient.auth.getSession();
-        
-        if (error) {
-          debugInfo.push(`✗ Session check error: ${error.message}`);
-        } else if (session?.user) {
-          debugInfo.push('✓ Existing session found');
-          debugInfo.push(`User: ${session.user.email}`);
-          // Redirect to portal if already logged in
-          window.location.href = 'portal.html';
-        } else {
-          debugInfo.push('○ No existing session');
-        }
-        
-        updateDebugInfo();
       } catch (error) {
-        debugInfo.push(`✗ Session check failed: ${error.message}`);
+        debugInfo.push(`✗ Email confirmation error: ${error.message}`);
         updateDebugInfo();
-        console.error('Session check error:', error);
+        console.error('Email confirmation error:', error);
       }
     }
 
     // Initialize everything when page loads
     document.addEventListener('DOMContentLoaded', async () => {
-      // Wait a bit for the script to fully load
+      // Wait for scripts to load
       setTimeout(async () => {
         // Initialize Supabase
         const supabaseInitialized = initializeSupabase();
         updateDebugInfo();
         
         if (supabaseInitialized) {
-          // Check for existing session
-          await checkExistingSession();
+          // Handle session and potential redirects
+          const isRedirecting = await clearExistingSession();
+          
+          if (!isRedirecting) {
+            // Handle email confirmation if present
+            await handleEmailConfirmation();
+            
+            // Auto-focus email input
+            emailInput.focus();
+          }
         } else {
           showMessage('Failed to initialize authentication service. Please refresh the page.', 'error');
         }
-        
-        // Auto-focus email input
-        emailInput.focus();
       }, 100);
+    });
+
+    // Enable debug mode with Ctrl+D
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 'd') {
+        e.preventDefault();
+        const debugDiv = document.getElementById('debug-info');
+        debugDiv.style.display = debugDiv.style.display === 'none' ? 'block' : 'none';
+      }
     });
   </script>
 </body>

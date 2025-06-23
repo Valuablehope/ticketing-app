@@ -1,0 +1,120 @@
+<section id="tickets-section" class="content-section">
+  <div class="section-header">
+    <div class="section-title">
+      <h2>All Tickets</h2>
+      <p>Manage and track all support tickets</p>
+    </div>
+    <div class="section-actions">
+      <div class="search-container">
+        <input type="text" id="ticket-search" class="search-input" placeholder="Search tickets...">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="M21 21l-4.35-4.35"/>
+        </svg>
+      </div>
+      <div class="filter-container">
+        <select id="status-filter" class="filter-select">
+          <option value="">All Status</option>
+          <option value="Open">Open</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Resolved">Resolved</option>
+          <option value="Closed">Closed</option>
+        </select>
+        <select id="priority-filter" class="filter-select">
+          <option value="">All Priority</option>
+          <option value="Low">Low</option>
+          <option value="Medium">Medium</option>
+          <option value="High">High</option>
+        </select>
+      </div>
+      <div class="view-controls">
+        <button class="view-btn active" data-view="table">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M3 6h18M3 12h18m-9 6h9"/>
+          </svg>
+          Table
+        </button>
+        <button class="view-btn" data-view="cards">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <rect x="3" y="3" width="18" height="7"/>
+            <rect x="3" y="14" width="18" height="7"/>
+          </svg>
+          Cards
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk Actions -->
+  <div class="bulk-actions">
+    <div class="bulk-selection">
+      <input type="checkbox" id="select-all" class="header-checkbox">
+      <label for="select-all">Select All</label>
+    </div>
+    <button class="bulk-action-btn" disabled>
+      Actions
+    </button>
+    <button class="clear-filters-btn" onclick="clearFilters()">
+      Clear Filters
+    </button>
+  </div>
+
+  <!-- Table View -->
+  <div id="table-view" class="tickets-container active">
+    <table class="tickets-table" id="tickets-table">
+      <thead>
+        <tr>
+          <th class="checkbox-col">
+            <input type="checkbox" class="header-checkbox">
+          </th>
+          <th class="sortable" data-sort="ticket_number">ID</th>
+          <th class="sortable" data-sort="title">Title</th>
+          <th class="sortable" data-sort="status">Status</th>
+          <th class="sortable" data-sort="priority">Priority</th>
+          <th class="sortable" data-sort="assigned_to">Assignee</th>
+          <th class="sortable" data-sort="base_id">Location</th>
+          <th class="sortable" data-sort="created_at">Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="9">Loading tickets...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Cards View -->
+  <div id="cards-view" class="tickets-cards">
+    <div id="tickets-cards">
+      <p>Loading tickets...</p>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div id="empty-state" class="empty-state" style="display: none;">
+    <div class="empty-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="11" cy="11" r="8"/>
+        <path d="M21 21l-4.35-4.35"/>
+      </svg>
+    </div>
+    <h3>No tickets found</h3>
+    <p>Try adjusting your search criteria or create a new ticket.</p>
+    <div class="empty-actions">
+      <button onclick="clearFilters()" class="btn btn-secondary">Clear Filters</button>
+      <a href="public/ticket-submission.html" class="btn btn-primary">Create New Ticket</a>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination-container">
+    <div class="pagination-info">
+      Showing <span id="pagination-showing">1-10</span> of <span id="pagination-total">0</span> tickets
+    </div>
+    <div class="pagination-controls">
+      <button id="prev-page" class="pagination-btn" disabled>Previous</button>
+      <div id="pagination-numbers" class="pagination-numbers"></div>
+      <button id="next-page" class="pagination-btn">Next</button>
+    </div>
+  </div>
+</section>

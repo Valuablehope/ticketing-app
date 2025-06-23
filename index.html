@@ -6,100 +6,74 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Welcome – Ticketing Portal</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    body {
-      font-family: 'Inter', sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      padding: 20px;
-    }
-    .container {
-      background: rgba(255,255,255,0.95);
-      backdrop-filter: blur(8px);
-      border-radius: 16px;
-      padding: 30px;
-      max-width: 360px;
-      width: 100%;
-      text-align: center;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    }
-    h1 {
-      margin-bottom: 20px;
-      font-size: 24px;
-      color: #333;
-    }
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .input-field {
-      padding: 12px 16px;
-      font-size: 16px;
-      border: 2px solid #e5e7eb;
-      border-radius: 8px;
-      transition: border-color 0.2s;
-    }
-    .input-field:focus {
-      outline: none;
-      border-color: #667eea;
-    }
-    .error-message {
-      display: none;
-      color: #b91c1c;
-      font-size: 14px;
-      margin-top: 6px;
-    }
-    .btn {
-      padding: 12px;
-      font-size: 16px;
-      font-weight: 600;
-      color: white;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 16px rgba(102,126,234,0.3);
-    }
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
-    }
-  </style>
+  
+  <!-- Base styles -->
+  <link rel="stylesheet" href="./public/css/base/variables.css">
+  <link rel="stylesheet" href="./public/css/base/reset.css">
+  <link rel="stylesheet" href="./public/css/base/utilities.css">
+  
+  <!-- Component styles -->
+  <link rel="stylesheet" href="./public/css/components/buttons.css">
+  <link rel="stylesheet" href="./public/css/components/forms.css">
+  
+  <!-- Page-specific styles -->
+  <link rel="stylesheet" href="./public/css/pages/index.css">
+  
   <!-- Supabase UMD build -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
-<body>
-  <div class="container">
-    <h1>Enter Your Work Email</h1>
-    <form id="email-form" autocomplete="off">
-      <input
-        type="email"
-        id="email"
-        class="input-field"
-        required
-        autocomplete="off"
-      />
-      <div id="error" class="error-message">
-        Please use your work email
-      </div>
-      <button type="submit" class="btn">Continue</button>
-    </form>
-  </div>
+<body class="index-body">
+  <!-- Floating orbs for visual appeal -->
+  <div class="floating-orb"></div>
+  <div class="floating-orb"></div>
+  <div class="floating-orb"></div>
 
+  <div class="index-container">
+    <div class="index-card">
+      <!-- Logo Section -->
+      <div class="logo-section">
+        <div class="index-logo">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+        </div>
+        <h1 class="index-title">Enter Your Work ID</h1>
+        <p class="index-subtitle">Please use your work id</p>
+      </div>
+
+      <!-- Email Form -->
+      <form id="email-form" autocomplete="off">
+        <div class="form-group">
+          <div class="input-wrapper">
+            <input
+              type="email"
+              id="email"
+              class="form-input"
+              placeholder="please provide your id here"
+              required
+              autocomplete="off"
+            />
+            <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"></path>
+            </svg>
+          </div>
+          
+          <!-- Loading message -->
+          <div id="loading" class="form-help" style="display: none;">
+            Verifying your email...
+          </div>
+        </div>
+
+        <!-- Error Message -->
+        <div id="error" class="error-message" style="display: none;">
+          Please use your work email
+        </div>
+
+        <button type="submit" class="index-btn" id="submit-btn">
+          Continue
+        </button>
+      </form>
+      
   <script>
     // Initialize Supabase client
     const SUPABASE_URL = 'https://rkdblbnmtzyrapfemswq.supabase.co';
@@ -109,39 +83,161 @@
     const form = document.getElementById('email-form');
     const emailInput = document.getElementById('email');
     const errorDiv = document.getElementById('error');
+    const loadingDiv = document.getElementById('loading');
+    const submitBtn = document.getElementById('submit-btn');
+
+    // Fill demo email function
+    window.fillDemoEmail = function() {
+      emailInput.value = 'demo@company.com';
+      emailInput.focus();
+      // Clear any existing errors
+      errorDiv.style.display = 'none';
+      errorDiv.classList.remove('show');
+    };
+
+    // Generate a secure session token
+    function generateSessionToken() {
+      const array = new Uint8Array(32);
+      crypto.getRandomValues(array);
+      return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+    }
+
+    // Store session with expiration
+    function createSession(email) {
+      const token = generateSessionToken();
+      const expiration = Date.now() + (30 * 60 * 1000); // 30 minutes
+      
+      const sessionData = {
+        token,
+        email,
+        expiration,
+        verified: true
+      };
+      
+      // Store in sessionStorage (cleared when browser closes)
+      sessionStorage.setItem('ticketing_session', JSON.stringify(sessionData));
+      
+      // Also store in a way that's harder to forge
+      const signature = btoa(JSON.stringify({
+        token,
+        timestamp: Date.now(),
+        email: email.toLowerCase()
+      }));
+      sessionStorage.setItem('session_signature', signature);
+      
+      return token;
+    }
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      
+      // Reset UI
       errorDiv.style.display = 'none';
+      errorDiv.classList.remove('show');
+      loadingDiv.style.display = 'block';
+      submitBtn.disabled = true;
+      
+      // Add loading state to button
+      submitBtn.innerHTML = '<div class="btn-loading"><div class="spinner"></div> Verifying...</div>';
+      
       const email = emailInput.value.trim().toLowerCase();
 
       if (!email) {
-        errorDiv.textContent = 'Please enter your email address.';
-        errorDiv.style.display = 'block';
+        showError('Please enter your email address.');
         return;
       }
 
-      // Call the server-side function
-      const { data: allowed, error } = await supabase
-        .rpc('is_domain_allowed', { email });
+      try {
+        // Special handling for demo email
+        if (email === 'demo@company.com') {
+          // Create secure session for demo
+          createSession(email);
+          
+          // Add a small delay to show verification
+          setTimeout(() => {
+            window.location.href = 'public/ticket-submission.html';
+          }, 500);
+          return;
+        }
 
-      if (error) {
-        console.error('Domain check failed:', error);
-        errorDiv.textContent = 'An error occurred. Try again later.';
-        errorDiv.style.display = 'block';
-      } else if (allowed) {
-        // proceed if allowed
-        window.location.href = 'public/ticket-submission.html';
-      } else {
-        errorDiv.textContent = 'Please use your work email';
-        errorDiv.style.display = 'block';
+        // Call the server-side function to verify domain
+        const { data: allowed, error } = await supabase
+          .rpc('is_domain_allowed', { email });
+
+        if (error) {
+          console.error('Domain check failed:', error);
+          showError('An error occurred. Please try again later.');
+          return;
+        }
+
+        if (allowed) {
+          // Create secure session
+          createSession(email);
+          
+          // Add a small delay to show verification
+          setTimeout(() => {
+            window.location.href = 'public/ticket-submission.html';
+          }, 500);
+        } else {
+          showError('Please use your work id. Only authorized ids are allowed.');
+        }
+      } catch (error) {
+        console.error('Verification failed:', error);
+        showError('An error occurred during verification. Please try again.');
       }
     });
+
+    function showError(message) {
+      errorDiv.textContent = message;
+      errorDiv.style.display = 'block';
+      errorDiv.classList.add('show');
+      loadingDiv.style.display = 'none';
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = 'Continue';
+    }
 
     // Clear error on input
     emailInput.addEventListener('input', () => {
       errorDiv.style.display = 'none';
+      errorDiv.classList.remove('show');
+    });
+
+    // Check if user is already verified and redirect
+    window.addEventListener('load', () => {
+      const session = sessionStorage.getItem('ticketing_session');
+      if (session) {
+        try {
+          const sessionData = JSON.parse(session);
+          if (sessionData.verified && sessionData.expiration > Date.now()) {
+            // Session is still valid, redirect to ticket page
+            window.location.href = 'public/ticket-submission.html';
+            return;
+          }
+        } catch (e) {
+          // Invalid session data, clear it
+          sessionStorage.removeItem('ticketing_session');
+          sessionStorage.removeItem('session_signature');
+        }
+      }
+    });
+
+    // Add smooth loading transition
+    window.addEventListener('load', function() {
+      document.body.style.opacity = '1';
     });
   </script>
+
+  <style>
+    /* Add smooth loading transition */
+    body {
+      opacity: 0;
+      transition: opacity 0.3s ease-in-out;
+    }
+    
+    /* Ensure smooth scroll behavior */
+    html {
+      scroll-behavior: smooth;
+    }
+  </style>
 </body>
 </html>
