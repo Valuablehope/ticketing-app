@@ -81,7 +81,34 @@ class DashboardModule {
     }
 
     container.innerHTML = recentTickets.map(ticket => {
-      const baseName = bases[ticket.base_id]?.name || 'Unknown';
+      // Try multiple ways to get the base name
+      let baseName = 'Unknown';
+      
+      if (ticket.base_name) {
+        // If the ticket already has base_name (enriched data)
+        baseName = ticket.base_name;
+      } else if (bases && ticket.base_id) {
+        // Check if bases is an object with base_id as key
+        if (bases[ticket.base_id]) {
+          baseName = bases[ticket.base_id].name || bases[ticket.base_id].base_name || bases[ticket.base_id];
+        } else {
+          // Maybe bases is an array, find by id
+          const baseArray = Array.isArray(bases) ? bases : Object.values(bases);
+          const baseRecord = baseArray.find(base => base && (base.id === ticket.base_id || base.base_id === ticket.base_id));
+          if (baseRecord) {
+            baseName = baseRecord.name || baseRecord.base_name || 'Unknown';
+          }
+        }
+      }
+      
+      console.log('Ticket base lookup:', {
+        ticketId: ticket.id,
+        baseId: ticket.base_id,
+        baseName: baseName,
+        basesType: typeof bases,
+        basesKeys: bases ? Object.keys(bases) : 'No bases'
+      });
+      
       // Use the assigned_to_name from the enriched ticket data
       const assigneeName = ticket.assigned_to_name || 'Unassigned';
       const timeAgo = this.ui ? this.ui.formatTimeAgo(ticket.created_at) : 'Recently';
