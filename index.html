@@ -165,7 +165,7 @@
           .rpc('is_domain_allowed', { email });
 
         if (error) {
-          console.error('Domain check failed:', error);
+          
           showError('An error occurred. Please try again later.');
           return;
         }
@@ -182,7 +182,7 @@
           showError('Please use your work id. Only authorized ids are allowed.');
         }
       } catch (error) {
-        console.error('Verification failed:', error);
+        
         showError('An error occurred during verification. Please try again.');
       }
     });

@@ -14,7 +14,6 @@ class HISPortalApp {
    */
   async initialize() {
     try {
-      console.log('🚀 Initializing HIS Portal...');
       
       // Show loading screen
       this.showLoading();
@@ -49,11 +48,9 @@ class HISPortalApp {
         window.markModalSystemReady();
       }
 
-      console.log('✅ Portal initialization complete');
       this.services.ui.showToast('Portal loaded successfully', 'success');
 
     } catch (error) {
-      console.error('❌ Portal initialization failed:', error);
       this.showInitError(`Failed to initialize portal: ${error.message}`);
     }
   }
@@ -72,7 +69,6 @@ class HISPortalApp {
     }
 
     this.supabaseClient = supabase.createClient(config.url, config.anonKey);
-    console.log('✓ Supabase client initialized');
   }
 
   /**
@@ -100,7 +96,6 @@ class HISPortalApp {
     window.dashboardModule = this.services.dashboard;
     window.ticketRenderer = this.services.tickets;
 
-    console.log('✓ Services initialized');
   }
 
   /**
@@ -118,11 +113,9 @@ class HISPortalApp {
       this.currentUser = this.services.auth.getCurrentUser();
       window.currentUser = this.currentUser;
       
-      console.log('✓ Authentication verified for:', this.currentUser.email);
       return true;
 
     } catch (error) {
-      console.error('Authentication check failed:', error);
       this.showAuthError('Authentication failed: ' + error.message);
       return false;
     }
@@ -134,9 +127,7 @@ class HISPortalApp {
   async loadApplicationData() {
     try {
       await this.services.data.refreshData();
-      console.log('✓ Application data loaded');
     } catch (error) {
-      console.error('Failed to load application data:', error);
       this.services.ui.showToast('Failed to load some data. Please try refreshing.', 'warning');
     }
   }
@@ -158,9 +149,9 @@ class HISPortalApp {
       // Update user info in UI
       this.updateUserInterface();
 
-      console.log('✓ UI components initialized');
+      
     } catch (error) {
-      console.error('UI initialization failed:', error);
+      
       throw new Error('Failed to initialize user interface');
     }
   }
@@ -184,7 +175,6 @@ class HISPortalApp {
     // Keyboard shortcuts
     this.setupKeyboardShortcuts();
 
-    console.log('✓ Event listeners setup complete');
   }
 
   /**
@@ -387,7 +377,6 @@ class HISPortalApp {
       // Verify auth when user returns to the page
       await this.services.auth.initialize();
     } catch (error) {
-      console.error('Auth verification failed:', error);
       this.showAuthError('Session expired. Please log in again.');
     }
   }
@@ -424,7 +413,6 @@ class HISPortalApp {
       this.services.tickets.renderTicketsTable();
       this.services.ui.showToast('Dashboard refreshed successfully', 'success');
     } catch (error) {
-      console.error('Error refreshing dashboard:', error);
       this.services.ui.showToast('Failed to refresh dashboard', 'error');
     }
   }
@@ -547,7 +535,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     await app.initialize();
   } catch (error) {
-    console.error('Critical application error:', error);
     app.showInitError('Critical error during initialization. Please refresh the page.');
   }
 });
@@ -556,7 +543,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 window.addEventListener('beforeunload', () => {
   // Cleanup if needed
   if (window.app) {
-    console.log('Application shutting down...');
   }
 });
 

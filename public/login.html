@@ -136,7 +136,7 @@
         return true;
       } catch (error) {
         debugInfo.push(`✗ Supabase initialization failed: ${error.message}`);
-        console.error('Supabase initialization error:', error);
+        
         return false;
       }
     }
@@ -190,7 +190,7 @@
       } catch (error) {
         debugInfo.push(`✗ Session check failed: ${error.message}`);
         updateDebugInfo();
-        console.error('Session check error:', error);
+        
         return false;
       }
     }
@@ -276,7 +276,7 @@
         debugInfo.push(`✗ Unexpected error: ${error.message}`);
         updateDebugInfo();
         showMessage('An unexpected error occurred. Please try again.', 'error');
-        console.error('Login error:', error);
+        
       } finally {
         setLoading(false);
       }
@@ -316,7 +316,7 @@
         debugInfo.push(`✗ Password reset error: ${error.message}`);
         updateDebugInfo();
         showMessage('Failed to send reset email', 'error');
-        console.error('Password reset error:', error);
+        
       }
     });
 
@@ -381,7 +381,7 @@
       } catch (error) {
         debugInfo.push(`✗ Email confirmation error: ${error.message}`);
         updateDebugInfo();
-        console.error('Email confirmation error:', error);
+        
       }
     }
 

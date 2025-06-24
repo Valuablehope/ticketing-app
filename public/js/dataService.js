@@ -20,13 +20,13 @@ class DataService {
    */
   async initialize() {
     try {
-      console.log("🔄 Initializing Data Service...");
+      
       await this.refreshData();
       this.setupRealtimeSubscriptions();
-      console.log("✅ Data Service initialized successfully");
+      
       return true;
     } catch (error) {
-      console.error("❌ Data Service initialization failed:", error);
+      
       throw error;
     }
   }
@@ -36,14 +36,14 @@ class DataService {
    */
   async refreshData() {
     if (this.isLoading) {
-      console.log("⏳ Data refresh already in progress...");
+      
       return;
     }
 
     this.isLoading = true;
 
     try {
-      console.log("🔄 Refreshing all data...");
+      
 
       // Load all data in parallel for better performance
       const [ticketsResult, basesResult, categoriesResult, usersResult] =
@@ -56,16 +56,16 @@ class DataService {
 
       // Log any errors but don't throw to allow partial data loading
       if (ticketsResult.status === "rejected") {
-        console.warn("⚠️ Failed to load tickets:", ticketsResult.reason);
+        
       }
       if (basesResult.status === "rejected") {
-        console.warn("⚠️ Failed to load bases:", basesResult.reason);
+        
       }
       if (categoriesResult.status === "rejected") {
-        console.warn("⚠️ Failed to load categories:", categoriesResult.reason);
+        
       }
       if (usersResult.status === "rejected") {
-        console.warn("⚠️ Failed to load users:", usersResult.reason);
+        
       }
 
       // Calculate statistics
@@ -77,12 +77,10 @@ class DataService {
       // Notify all registered callbacks
       this.notifyRefreshCallbacks();
 
-      console.log(
-        `✅ Data refresh complete. Loaded ${this.data.tickets.length} tickets`
-      );
+      
     } catch (error) {
       this.isLoading = false;
-      console.error("❌ Error during data refresh:", error);
+      
       throw error;
     }
   }
@@ -106,7 +104,7 @@ class DataService {
       if (error) {
         // Handle case where tables don't exist yet
         if (error.code === "42P01") {
-          console.warn("⚠️ Tickets table does not exist yet");
+          
           this.data.tickets = [];
           return;
         }
@@ -130,9 +128,9 @@ class DataService {
         assigned_to_name: this.getUserFullName(ticket.assigned_to),
       }));
 
-      console.log(`📋 Loaded ${this.data.tickets.length} tickets`);
+      
     } catch (error) {
-      console.error("❌ Error loading tickets:", error);
+      
       this.data.tickets = [];
       throw error;
     }
@@ -151,7 +149,7 @@ class DataService {
 
       if (error) {
         if (error.code === "42P01") {
-          console.warn("⚠️ Bases table does not exist yet");
+          
           this.data.bases = {};
           return;
         }
@@ -166,9 +164,9 @@ class DataService {
         });
       }
 
-      console.log(`🏢 Loaded ${Object.keys(this.data.bases).length} bases`);
+      
     } catch (error) {
-      console.error("❌ Error loading bases:", error);
+      
       this.data.bases = {};
       // Don't throw - let app continue with empty bases
     }
@@ -187,7 +185,7 @@ class DataService {
 
       if (error) {
         if (error.code === "42P01") {
-          console.warn("⚠️ Categories table does not exist yet");
+          
           this.data.categories = {};
           return;
         }
@@ -202,11 +200,9 @@ class DataService {
         });
       }
 
-      console.log(
-        `📂 Loaded ${Object.keys(this.data.categories).length} categories`
-      );
+      
     } catch (error) {
-      console.error("❌ Error loading categories:", error);
+      
       this.data.categories = {};
       // Don't throw - let app continue with empty categories
     }
@@ -225,7 +221,7 @@ class DataService {
 
       if (error) {
         if (error.code === "42P01") {
-          console.warn("⚠️ his_users table does not exist yet");
+          
           this.data.users = [];
           this.data.usersLookup = {};
           return;
@@ -248,11 +244,9 @@ class DataService {
         });
       }
 
-      console.log(
-        `👥 Loaded ${this.data.users.length} users from his_users table`
-      );
+      
     } catch (error) {
-      console.error("❌ Error loading users from his_users table:", error);
+      
       this.data.users = [];
       this.data.usersLookup = {};
       // Don't throw - let app continue with empty users
@@ -311,10 +305,10 @@ class DataService {
       this.calculateStats();
       this.notifyRefreshCallbacks();
 
-      console.log(`✅ Created ticket #${data.ticket_number}`);
+      
       return enrichedTicket;
     } catch (error) {
-      console.error("❌ Error creating ticket:", error);
+      
       throw error;
     }
   }
@@ -355,10 +349,10 @@ class DataService {
       this.calculateStats();
       this.notifyRefreshCallbacks();
 
-      console.log(`✅ Updated ticket #${data.ticket_number || ticketId}`);
+      
       return this.data.tickets[ticketIndex];
     } catch (error) {
-      console.error("❌ Error updating ticket:", error);
+      
       throw error;
     }
   }
@@ -379,9 +373,7 @@ class DataService {
       const ticketIndex = this.data.tickets.findIndex((t) => t.id === ticketId);
       if (ticketIndex !== -1) {
         const deletedTicket = this.data.tickets.splice(ticketIndex, 1)[0];
-        console.log(
-          `🗑️ Deleted ticket #${deletedTicket.ticket_number || ticketId}`
-        );
+        
       }
 
       this.calculateStats();
@@ -389,7 +381,7 @@ class DataService {
 
       return true;
     } catch (error) {
-      console.error("❌ Error deleting ticket:", error);
+      
       throw error;
     }
   }
@@ -429,10 +421,10 @@ class DataService {
       this.calculateStats();
       this.notifyRefreshCallbacks();
 
-      console.log(`✅ Bulk updated ${data.length} tickets`);
+      
       return data;
     } catch (error) {
-      console.error("❌ Error bulk updating tickets:", error);
+      
       throw error;
     }
   }
@@ -907,9 +899,9 @@ class DataService {
         )
         .subscribe();
 
-      console.log("🔔 Real-time subscriptions established");
+      
     } catch (error) {
-      console.warn("⚠️ Could not establish real-time subscriptions:", error);
+      
     }
   }
 
@@ -917,7 +909,7 @@ class DataService {
    * Handle real-time ticket changes
    */
   handleTicketChange(payload) {
-    console.log("🔔 Real-time update received:", payload.eventType);
+    
 
     switch (payload.eventType) {
       case "INSERT":
@@ -977,7 +969,7 @@ class DataService {
       try {
         callback(this.data);
       } catch (error) {
-        console.error("Error in refresh callback:", error);
+        
       }
     });
   }

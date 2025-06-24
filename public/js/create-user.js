@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       baseSelect.appendChild(opt);
     });
   } catch (err) {
-    console.error('Error loading bases:', err.message);
+    
   }
 
   // --- Populate "Department" Dropdown ---
@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       .order('name');
     
     if (deptError) {
-      console.warn('Could not load departments:', deptError.message);
+      
     } else {
       departments = departmentsData || [];
       
@@ -60,10 +60,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         departmentSelect.appendChild(opt);
       });
       
-      console.log(`✅ Loaded ${departments.length} departments`);
+      
     }
   } catch (err) {
-    console.error('Error loading departments:', err.message);
+    
   }
 
   // --- Populate "Team" Dropdown ---
@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       .order('name');
     
     if (teamsError) {
-      console.warn('Could not load teams:', teamsError.message);
+      
     } else {
       teams = teamsData || [];
       
@@ -90,10 +90,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         teamSelect.appendChild(opt);
       });
       
-      console.log(`✅ Loaded ${teams.length} teams`);
+      
     }
   } catch (err) {
-    console.error('Error loading teams:', err.message);
+    
   }
 
   // --- Handle Department Change to Filter Teams ---
@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Enable team selection
       teamSelect.disabled = false;
       
-      console.log(`Filtered ${filteredTeams.length} teams for department ${selectedDepartmentId}`);
+      
     } else {
       // If no department selected, disable team dropdown
       teamSelect.disabled = true;
@@ -230,12 +230,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
           if (checkError && checkError.code !== 'PGRST116') {
             // PGRST116 means no rows found, which is what we want
-            console.warn('Error checking existing user:', checkError.message);
+            
           }
 
           if (existingUser) {
             // User already exists, update instead of insert
-            console.log('User already exists in his_users, updating...');
+            
             
             // Get names for the text fields
             const selectedDepartment = departments.find(d => d.id === departmentId);
@@ -256,13 +256,13 @@ document.addEventListener('DOMContentLoaded', async () => {
               .eq('id', signUpData.user.id);
 
             if (updateError) {
-              console.warn('Could not update his_users table:', updateError.message);
+              
             } else {
-              console.log('✅ User updated in his_users table');
+              
             }
           } else {
             // User doesn't exist, insert new record
-            console.log('Inserting new user into his_users...');
+            
             
             // Get names for the text fields
             const selectedDepartment = departments.find(d => d.id === departmentId);
@@ -284,13 +284,13 @@ document.addEventListener('DOMContentLoaded', async () => {
               }]);
 
             if (insertError) {
-              console.warn('Could not insert into his_users table:', insertError.message);
+              
             } else {
-              console.log('✅ User added to his_users table');
+              
             }
           }
         } catch (insertErr) {
-          console.warn('Error managing his_users record:', insertErr.message);
+          
         }
       }
 
@@ -310,7 +310,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       updatePasswordStrength(''); // Reset password strength indicator
       
     } catch (err) {
-      console.error('Create user error:', err.message);
+      
       
       // Handle common errors
       let errorMessage = '';

@@ -83,12 +83,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       categories = categoriesData ? Object.fromEntries(categoriesData.map(c => [c.id, c.name])) : {};
       users = usersData ? Object.fromEntries(usersData.map(u => [u.id, u])) : {}; // Create users lookup
       
-      console.log(`✅ Loaded ${Object.keys(users).length} users from his_users table`);
+      
     } catch (err) {
       bases = {};
       categories = {};
       users = {};
-      console.warn('⚠️ Failed to load lookup data:', err);
+      
     }
   }
 

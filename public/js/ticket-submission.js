@@ -130,7 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
       userEmail = sessionData.email || "";
     }
   } catch (error) {
-    console.warn("Could not retrieve user email from session");
+    
   }
 
   // --- Element references ---
@@ -397,7 +397,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       showToast("System data loaded successfully!", "success");
     } catch (error) {
-      console.error("Error loading lookup data:", error);
+      
       showToast(`Error loading system data: ${error.message}`, "error");
     }
   }
@@ -455,7 +455,7 @@ document.addEventListener("DOMContentLoaded", () => {
       displayTicketDetails(ticket, logs);
       showToast("Ticket found successfully!", "success");
     } catch (error) {
-      console.error("Error tracking ticket:", error);
+      
 
       resultContainer.innerHTML = `
         <div class="result-card">
@@ -645,7 +645,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       showToast("Ticket submitted successfully!", "success", "Success");
     } catch (error) {
-      console.error("Error submitting ticket:", error);
+      
 
       resultContainer.innerHTML = `
         <div class="result-card">
@@ -820,7 +820,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     } catch (error) {
-      console.error("Failed to initialize app:", error);
+      
       showToast(
         "Failed to initialize application. Please refresh the page.",
         "error"

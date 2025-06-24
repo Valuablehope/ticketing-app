@@ -22,7 +22,7 @@ class DashboardModule {
       this.renderStatusDistribution();
       this.loadAssigneeStats();
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
+      
     }
   }
 

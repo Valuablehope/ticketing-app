@@ -15,7 +15,6 @@ class AuthService {
       const { data: { session }, error } = await this.supabase.auth.getSession();
       
       if (error) {
-        console.error('Session error:', error);
         this.redirectToLogin();
         return false;
       }
@@ -30,7 +29,6 @@ class AuthService {
       return true;
 
     } catch (error) {
-      console.error('Auth initialization error:', error);
       this.redirectToLogin();
       return false;
     }
@@ -41,14 +39,12 @@ class AuthService {
    */
   setupAuthListeners() {
     this.supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state changed:', event, session);
       
       switch (event) {
         case 'SIGNED_OUT':
           this.handleSignOut();
           break;
         case 'TOKEN_REFRESHED':
-          console.log('Token refreshed');
           break;
         case 'SIGNED_IN':
           this.currentUser = session?.user || null;
@@ -79,13 +75,11 @@ class AuthService {
         
         const { error } = await this.supabase.auth.signOut();
         if (error) {
-          console.error('Supabase logout error:', error);
         }
         
         this.handleSignOut();
         
       } catch (error) {
-        console.error('Logout error:', error);
         if (window.showToast) {
           window.showToast('Logout failed, redirecting anyway...', 'warning');
         }

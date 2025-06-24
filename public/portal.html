@@ -563,7 +563,7 @@
       
       // Prevent multiple initializations
       if (window.modalSystemInitialized) {
-        console.log('⚠️ Modal system already initialized, skipping...');
+        
         return;
       }
       window.modalSystemInitialized = true;
@@ -579,7 +579,7 @@
 
       function showTicketModal(ticket, lookupData) {
         if (!ticket) {
-          console.error('No ticket provided to showTicketModal');
+          
           return;
         }
 
@@ -590,7 +590,7 @@
         const modalBody = document.getElementById('modal-body');
 
         if (!modal || !modalTitle || !modalBody) {
-          console.error('Modal elements not found');
+          
           return;
         }
 
@@ -672,7 +672,7 @@
         modal.offsetHeight; // Force reflow
         modal.classList.add('active');
 
-        console.log('✅ Ticket modal shown for ticket:', ticket.id);
+        
       }
 
       function hideTicketModal() {
@@ -682,13 +682,13 @@
           modal.style.display = 'none';
           modal.style.visibility = 'hidden';
           modalState.currentTicket = null;
-          console.log('✅ Ticket modal hidden');
+          
         }
       }
 
       function showEditModal(ticket) {
         if (!ticket) {
-          console.error('No ticket provided to showEditModal');
+          
           return;
         }
 
@@ -701,7 +701,7 @@
           const modalTitle = document.getElementById('edit-modal-title');
           
           if (!modal || !modalTitle) {
-            console.error('Edit modal elements not found');
+            
             return;
           }
 
@@ -730,7 +730,7 @@
           modal.offsetHeight; // Force reflow
           modal.classList.add('active');
 
-          console.log('✅ Edit modal shown for ticket:', ticket.id);
+          
         });
       }
 
@@ -745,7 +745,7 @@
           const form = document.getElementById('edit-ticket-form');
           if (form) form.reset();
           
-          console.log('✅ Edit modal hidden');
+          
         }
       }
 
@@ -806,9 +806,9 @@
             dropdown.appendChild(option);
           });
 
-          console.log(`✅ Populated assignee dropdown with ${assignableUsers.length} users`);
+          
         } catch (error) {
-          console.error('Error populating assignee dropdown:', error);
+          
         }
       }
 
@@ -816,7 +816,7 @@
 
       function safeShowTicketDetails(ticketId) {
         if (!modalState.appInitialized) {
-          console.log('🚫 Blocked showTicketDetails during initialization:', ticketId);
+          
           modalState.blockedCalls.push({ type: 'show', ticketId });
           return;
         }
@@ -834,7 +834,7 @@
           const lookupData = window.app?.services?.data?.data || null;
           showTicketModal(ticket, lookupData);
         } else {
-          console.error('Ticket not found:', ticketId);
+          
           if (window.app?.services?.ui) {
             window.app.services.ui.showToast('Ticket not found', 'error');
           }
@@ -843,7 +843,7 @@
 
       function safeEditTicket(ticketId) {
         if (!modalState.appInitialized) {
-          console.log('🚫 Blocked editTicket during initialization:', ticketId);
+          
           modalState.blockedCalls.push({ type: 'edit', ticketId });
           return;
         }
@@ -860,7 +860,7 @@
         if (ticket) {
           showEditModal(ticket);
         } else {
-          console.error('Ticket not found for edit:', ticketId);
+          
           if (window.app?.services?.ui) {
             window.app.services.ui.showToast('Ticket not found', 'error');
           }
@@ -871,7 +871,7 @@
         try {
           const ticketId = document.getElementById('edit-ticket-id')?.value;
           if (!ticketId) {
-            console.error('No ticket ID found for saving');
+            
             return;
           }
 
@@ -915,7 +915,7 @@
             throw new Error('Data service not available');
           }
         } catch (error) {
-          console.error('Error updating ticket:', error);
+          
           if (window.app?.services?.ui) {
             window.app.services.ui.showToast('Failed to update ticket: ' + error.message, 'error');
           }
@@ -931,7 +931,7 @@
       // === EVENT HANDLERS ===
 
       function setupEventHandlers() {
-        console.log('🎛️ Setting up modal event handlers');
+        
 
         // Remove any existing handlers first
         document.removeEventListener('click', handleDocumentClick);
@@ -941,7 +941,7 @@
         document.addEventListener('click', handleDocumentClick);
         document.addEventListener('keydown', handleKeydown);
 
-        console.log('✅ Modal event handlers setup complete');
+        
       }
 
       function handleDocumentClick(e) {
@@ -1008,7 +1008,7 @@
       // === INITIALIZATION ===
 
       function initializeModalSystem() {
-        console.log('🚀 Initializing modal system');
+        
 
         // Force hide all modals on load
         const ticketModal = document.getElementById('ticket-modal');
@@ -1042,7 +1042,7 @@
         window.saveTicketChanges = saveTicketChanges;
         window.refreshAssigneeDropdown = populateAssigneeDropdown;
 
-        console.log('✅ Modal system initialized');
+        
       }
 
       // === APP INTEGRATION ===
@@ -1052,7 +1052,7 @@
         
         // Process any queued calls
         if (modalState.blockedCalls.length > 0) {
-          console.log('⚠️ Processing', modalState.blockedCalls.length, 'queued modal calls');
+          
           modalState.blockedCalls.forEach(call => {
             setTimeout(() => {
               if (call.type === 'show') safeShowTicketDetails(call.ticketId);
@@ -1062,7 +1062,7 @@
           modalState.blockedCalls = [];
         }
         
-        console.log('🎉 Modal system marked as ready');
+        
       };
 
       // Initialize when DOM is ready
@@ -1075,7 +1075,7 @@
       // Fallback timeout to mark as ready
       setTimeout(() => {
         if (!modalState.appInitialized) {
-          console.log('⏰ Timeout reached - marking modal system as ready');
+          
           window.markModalSystemReady();
         }
       }, 3000);
