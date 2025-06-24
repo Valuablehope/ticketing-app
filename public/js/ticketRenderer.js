@@ -195,8 +195,8 @@ class TicketRenderer {
           
           <div class="ticket-card-footer">
             <div class="ticket-card-assignee">
-              <div class="ticket-card-avatar">${(ticket.ticket.assigned_to_name || 'U').charAt(0).toUpperCase()}</div>
-              <span class="ticket-card-assignee-name">${ticket.ticket.assigned_to_name || 'Unassigned'}</span>
+              <div class="ticket-card-avatar">${(ticket.assigned_to_name || 'U').charAt(0).toUpperCase()}</div>
+              <span class="ticket-card-assignee-name">${ticket.assigned_to_name || 'Unassigned'}</span>
             </div>
             <div class="ticket-card-actions">
               <button class="action-btn view" onclick="event.stopPropagation(); showTicketDetails('${ticket.id}')" title="View">

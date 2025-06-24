@@ -550,308 +550,560 @@
   </div>
 
   <script>
-    // Wrap everything in an immediately invoked function to avoid global scope issues
+    // === PORTAL CONFIGURATION ===
+    // Global configuration
+    window.SUPABASE_CONFIG = {
+      url: 'https://rkdblbnmtzyrapfemswq.supabase.co',
+      anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrZGJsYm5tdHp5cmFwZmVtc3dxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1ODQyNTgsImV4cCI6MjA2NjE2MDI1OH0.TY7Ml-S-knKMNQ-HKylGLbpXIu9wHqGAZDHHAq4rRJc'
+    };
+
+    // === MODAL MANAGEMENT SYSTEM (FIXED) ===
     (function() {
-      // Global protection against multiple script execution
-      if (window.portalEventListenersSetup) {
-        console.log('⚠️ Portal script already loaded, skipping duplicate setup');
-        return;
-      }
-      window.portalEventListenersSetup = true;
-
-      // Global configuration and variables
-      window.SUPABASE_CONFIG = {
-        url: 'https://rkdblbnmtzyrapfemswq.supabase.co',
-        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrZGJsYm5tdHp5cmFwZmVtc3dxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1ODQyNTgsImV4cCI6MjA2NjE2MDI1OH0.TY7Ml-S-knKMNQ-HKylGLbpXIu9wHqGAZDHHAq4rRJc'
-      };
-      let currentTicketForEdit = null;
-      let appInitialized = false;
-
-    // IMMEDIATELY prevent any modal functions from working during load
-    let blockedCalls = [];
-    
-    // Define safe placeholder functions that queue calls until ready
-    window.showTicketDetails = function(ticketId) {
-      if (!appInitialized) {
-        console.log('🚫 Blocked showTicketDetails during initialization:', ticketId);
-        blockedCalls.push({type: 'show', ticketId});
-        return;
-      }
-      // Will be replaced by real function later
-    };
-    
-    window.editTicket = function(ticketId) {
-      if (!appInitialized) {
-        console.log('🚫 Blocked editTicket during initialization:', ticketId);
-        blockedCalls.push({type: 'edit', ticketId});
-        return;
-      }
-      // Will be replaced by real function later
-    };
-
-    // Force hide modals on page load
-    document.addEventListener('DOMContentLoaded', function() {
-      console.log('🔒 DOM loaded - forcing modals hidden');
-      const ticketModal = document.getElementById('ticket-modal');
-      const editModal = document.getElementById('edit-ticket-modal');
+      'use strict';
       
-      if (ticketModal) {
-        ticketModal.style.display = 'none';
-        ticketModal.style.visibility = 'hidden';
+      // Prevent multiple initializations
+      if (window.modalSystemInitialized) {
+        console.log('⚠️ Modal system already initialized, skipping...');
+        return;
       }
-      if (editModal) {
-        editModal.style.display = 'none';
-        editModal.style.visibility = 'hidden';
-      }
-    });
+      window.modalSystemInitialized = true;
 
-    // Function to populate the "Assigned To" dropdown
-    async function populateAssigneeDropdown() {
-      try {
-        const dropdown = document.getElementById('edit-assigned-to');
-        if (!dropdown) {
-          console.warn('Assigned to dropdown not found');
+      // Modal state management
+      const modalState = {
+        currentTicket: null,
+        appInitialized: false,
+        blockedCalls: []
+      };
+
+      // === CORE MODAL FUNCTIONS ===
+
+      function showTicketModal(ticket, lookupData) {
+        if (!ticket) {
+          console.error('No ticket provided to showTicketModal');
           return;
         }
 
-        // Clear existing options except the first "Unassigned" option
-        dropdown.innerHTML = '<option value="">Unassigned</option>';
+        modalState.currentTicket = ticket;
+        
+        const modal = document.getElementById('ticket-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalBody = document.getElementById('modal-body');
 
-        // Get users from the data service
-        if (window.app?.services?.data) {
-          const users = window.app.services.data.getUsers();
+        if (!modal || !modalTitle || !modalBody) {
+          console.error('Modal elements not found');
+          return;
+        }
+
+        // Hide edit modal if open
+        hideEditModal();
+
+        modalTitle.textContent = `Ticket ${ticket.ticket_number || ticket.id.slice(0, 8)}`;
+
+        // Get lookup data from window.app if available
+        const data = lookupData || (window.app?.services?.data?.data) || { bases: {}, categories: {} };
+        const baseName = data.bases?.[ticket.base_id] || 'Unknown';
+        const categoryName = data.categories?.[ticket.category_id] || 'Unknown';
+        const assignedToName = ticket.assigned_to_name || 'Unassigned';
+
+        modalBody.innerHTML = `
+          <div class="ticket-detail-grid">
+            <div class="detail-section">
+              <h4>Basic Information</h4>
+              <div class="detail-item">
+                <label>Title</label>
+                <p>${escapeHtml(ticket.title || '')}</p>
+              </div>
+              <div class="detail-item">
+                <label>Description</label>
+                <p>${escapeHtml(ticket.description || '')}</p>
+              </div>
+              <div class="detail-item">
+                <label>Status</label>
+                <p><span class="status-badge status-${sanitizeClass(ticket.status)}">${escapeHtml(ticket.status || '')}</span></p>
+              </div>
+              <div class="detail-item">
+                <label>Priority</label>
+                <p><span class="priority-badge priority-${sanitizeClass(ticket.priority)}">${escapeHtml(ticket.priority || '')}</span></p>
+              </div>
+            </div>
+            <div class="detail-section">
+              <h4>Assignment & Location</h4>
+              <div class="detail-item">
+                <label>Base/Location</label>
+                <p>${escapeHtml(baseName)}</p>
+              </div>
+              <div class="detail-item">
+                <label>Category</label>
+                <p>${escapeHtml(categoryName)}</p>
+              </div>
+              <div class="detail-item">
+                <label>Assigned To</label>
+                <p>${escapeHtml(assignedToName)}</p>
+              </div>
+            </div>
+            <div class="detail-section">
+              <h4>Submitter Information</h4>
+              <div class="detail-item">
+                <label>Name</label>
+                <p>${escapeHtml(ticket.submitter_name || '')}</p>
+              </div>
+              <div class="detail-item">
+                <label>Email</label>
+                <p>${escapeHtml(ticket.submitter_email || '')}</p>
+              </div>
+            </div>
+            <div class="detail-section">
+              <h4>Timeline</h4>
+              <div class="detail-item">
+                <label>Created</label>
+                <p>${formatDateTime(ticket.created_at)}</p>
+              </div>
+              <div class="detail-item">
+                <label>Last Updated</label>
+                <p>${formatDateTime(ticket.updated_at)}</p>
+              </div>
+            </div>
+          </div>
+        `;
+
+        // Show modal
+        modal.style.display = 'flex';
+        modal.style.visibility = 'visible';
+        modal.offsetHeight; // Force reflow
+        modal.classList.add('active');
+
+        console.log('✅ Ticket modal shown for ticket:', ticket.id);
+      }
+
+      function hideTicketModal() {
+        const modal = document.getElementById('ticket-modal');
+        if (modal) {
+          modal.classList.remove('active');
+          modal.style.display = 'none';
+          modal.style.visibility = 'hidden';
+          modalState.currentTicket = null;
+          console.log('✅ Ticket modal hidden');
+        }
+      }
+
+      function showEditModal(ticket) {
+        if (!ticket) {
+          console.error('No ticket provided to showEditModal');
+          return;
+        }
+
+        // Hide ticket modal if open
+        hideTicketModal();
+
+        // Populate assignee dropdown first
+        populateAssigneeDropdown().then(() => {
+          const modal = document.getElementById('edit-ticket-modal');
+          const modalTitle = document.getElementById('edit-modal-title');
           
-          if (users && users.length > 0) {
-            // Filter for assignable users (those with appropriate roles)
-            const assignableUsers = users.filter(user => {
-              const role = user.role?.toLowerCase();
-              return role && ['admin', 'technician', 'support', 'staff', 'manager'].includes(role);
-            });
-
-            // Add each assignable user to the dropdown
-            assignableUsers.forEach(user => {
-              const option = document.createElement('option');
-              option.value = user.id;
-              option.textContent = user.full_name || user.email || `User ${user.id}`;
-              dropdown.appendChild(option);
-            });
-
-            console.log(`✅ Populated assignee dropdown with ${assignableUsers.length} users`);
-          } else {
-            console.warn('⚠️ No users available for assignment');
+          if (!modal || !modalTitle) {
+            console.error('Edit modal elements not found');
+            return;
           }
-        } else {
-          // Fallback: try to load users directly from Supabase if data service isn't available
-          if (window.SUPABASE_CONFIG && typeof supabase !== 'undefined') {
+
+          modalTitle.textContent = `Edit Ticket #${ticket.ticket_number || ticket.id.slice(0, 8)}`;
+
+          // Populate form fields
+          const fields = [
+            { id: 'edit-ticket-id', value: ticket.id },
+            { id: 'edit-title', value: ticket.title || '' },
+            { id: 'edit-description', value: ticket.description || '' },
+            { id: 'edit-status', value: ticket.status || 'Open' },
+            { id: 'edit-priority', value: ticket.priority || 'Medium' },
+            { id: 'edit-assigned-to', value: ticket.assigned_to || '' }
+          ];
+
+          fields.forEach(field => {
+            const element = document.getElementById(field.id);
+            if (element) {
+              element.value = field.value;
+            }
+          });
+
+          // Show modal
+          modal.style.display = 'flex';
+          modal.style.visibility = 'visible';
+          modal.offsetHeight; // Force reflow
+          modal.classList.add('active');
+
+          console.log('✅ Edit modal shown for ticket:', ticket.id);
+        });
+      }
+
+      function hideEditModal() {
+        const modal = document.getElementById('edit-ticket-modal');
+        if (modal) {
+          modal.classList.remove('active');
+          modal.style.display = 'none';
+          modal.style.visibility = 'hidden';
+          
+          // Reset form
+          const form = document.getElementById('edit-ticket-form');
+          if (form) form.reset();
+          
+          console.log('✅ Edit modal hidden');
+        }
+      }
+
+      // === UTILITY FUNCTIONS ===
+
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      function sanitizeClass(text) {
+        return text ? text.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') : '';
+      }
+
+      function formatDateTime(dateString) {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+
+      async function populateAssigneeDropdown() {
+        try {
+          const dropdown = document.getElementById('edit-assigned-to');
+          if (!dropdown) return;
+
+          dropdown.innerHTML = '<option value="">Unassigned</option>';
+
+          let users = [];
+
+          // Try to get users from app service first
+          if (window.app?.services?.data) {
+            users = window.app.services.data.getUsers() || [];
+          } else if (window.SUPABASE_CONFIG && typeof supabase !== 'undefined') {
+            // Fallback to direct Supabase call
             const supabaseClient = supabase.createClient(
               window.SUPABASE_CONFIG.url, 
               window.SUPABASE_CONFIG.anonKey
             );
             
-            const { data: users, error } = await supabaseClient
+            const { data, error } = await supabaseClient
               .from('his_users')
               .select('id, email, full_name, role')
               .order('full_name');
 
-            if (error) {
-              console.error('Error loading users for dropdown:', error);
-              return;
-            }
-
-            if (users && users.length > 0) {
-              const assignableUsers = users.filter(user => {
-                const role = user.role?.toLowerCase();
-                return role && ['admin', 'technician', 'support', 'staff', 'manager'].includes(role);
-              });
-
-              assignableUsers.forEach(user => {
-                const option = document.createElement('option');
-                option.value = user.id;
-                option.textContent = user.full_name || user.email || `User ${user.id}`;
-                dropdown.appendChild(option);
-              });
-
-              console.log(`✅ Populated assignee dropdown with ${assignableUsers.length} users (fallback)`);
-            }
+            if (!error) users = data || [];
           }
-        }
-      } catch (error) {
-        console.error('Error populating assignee dropdown:', error);
-      }
-    }
 
-    // Real implementation functions (will replace placeholders when app is ready)
-    function realShowTicketDetails(ticketId) {
-      if (window.app?.services?.data && window.app?.services?.ui) {
-        const ticket = window.app.services.data.getTicket(ticketId);
-        if (ticket) {
-          currentTicketForEdit = ticket;
-          window.app.services.ui.showTicketModal(ticket, window.app.services.data.data);
-          const modal = document.getElementById('ticket-modal');
-          if (modal) {
-            modal.style.visibility = 'visible';
-            modal.style.display = 'flex';
-          }
+          const assignableUsers = users.filter(user => {
+            const role = user.role?.toLowerCase();
+            return role && ['admin', 'technician', 'support', 'staff', 'manager'].includes(role);
+          });
+
+          assignableUsers.forEach(user => {
+            const option = document.createElement('option');
+            option.value = user.id;
+            option.textContent = user.full_name || user.email || `User ${user.id}`;
+            dropdown.appendChild(option);
+          });
+
+          console.log(`✅ Populated assignee dropdown with ${assignableUsers.length} users`);
+        } catch (error) {
+          console.error('Error populating assignee dropdown:', error);
         }
       }
-    }
 
-    function realEditTicket(ticketId) {
-      if (window.app?.services?.data) {
-        const ticket = window.app.services.data.getTicket(ticketId);
-        if (ticket) {
-          // Populate the dropdown first
-          populateAssigneeDropdown();
-          
-          // Then populate the ticket data after a brief delay
-          setTimeout(() => {
-            const fields = [
-              { id: 'edit-ticket-id', value: ticket.id },
-              { id: 'edit-title', value: ticket.title || '' },
-              { id: 'edit-description', value: ticket.description || '' },
-              { id: 'edit-status', value: ticket.status || 'Open' },
-              { id: 'edit-priority', value: ticket.priority || 'Medium' },
-              { id: 'edit-assigned-to', value: ticket.assigned_to || '' }
-            ];
+      // === SAFE GLOBAL FUNCTIONS ===
 
-            fields.forEach(field => {
-              const element = document.getElementById(field.id);
-              if (element) {
-                element.value = field.value;
-              }
-            });
-
-            document.getElementById('edit-modal-title').textContent = 
-              `Edit Ticket #${ticket.ticket_number || ticket.id.slice(0, 8)}`;
-            
-            const editModal = document.getElementById('edit-ticket-modal');
-            if (editModal) {
-              editModal.style.visibility = 'visible';
-              editModal.style.display = 'flex';
-            }
-          }, 100);
-        }
-      }
-    }
-
-    // Function to safely initialize the app and replace placeholder functions
-    function initializeModalFunctions() {
-      console.log('✅ Replacing placeholder functions with real implementations');
-      
-      // Replace the placeholder functions with real ones
-      window.showTicketDetails = realShowTicketDetails;
-      window.editTicket = realEditTicket;
-      
-      // Mark as initialized
-      appInitialized = true;
-      
-      // Process any queued calls (though there shouldn't be any in normal operation)
-      if (blockedCalls.length > 0) {
-        console.log('⚠️ Processing', blockedCalls.length, 'queued modal calls');
-        blockedCalls.forEach(call => {
-          if (call.type === 'show') realShowTicketDetails(call.ticketId);
-          if (call.type === 'edit') realEditTicket(call.ticketId);
-        });
-        blockedCalls = [];
-      }
-    }
-
-    // Global function for app.js to call when ready
-    window.markAppAsInitialized = function() {
-      initializeModalFunctions();
-      console.log('🎉 App manually marked as initialized by app.js');
-    };
-
-    // Fallback timeout initialization
-    setTimeout(() => {
-      if (!appInitialized) {
-        console.log('⏰ Timeout reached - force initializing modal functions');
-        initializeModalFunctions();
-      }
-    }, 3000);
-
-    // === GLOBAL FUNCTIONS - ACCESSIBLE FROM HTML ===
-    
-    window.closeTicketModal = function() {
-      const modal = document.getElementById('ticket-modal');
-      if (modal) {
-        modal.style.display = 'none';
-        modal.style.visibility = 'hidden';
-      }
-    };
-
-    window.editCurrentTicket = function() {
-      if (currentTicketForEdit && appInitialized) {
-        window.closeTicketModal();
-        window.editTicket(currentTicketForEdit.id);
-      }
-    };
-
-    window.closeEditModal = function() {
-      const modal = document.getElementById('edit-ticket-modal');
-      if (modal) {
-        modal.style.display = 'none';
-        modal.style.visibility = 'hidden';
-        const form = document.getElementById('edit-ticket-form');
-        if (form) form.reset();
-      }
-    };
-
-    window.saveTicketChanges = async function() {
-      try {
-        const ticketId = document.getElementById('edit-ticket-id').value;
-        const updates = {
-          title: document.getElementById('edit-title').value.trim(),
-          description: document.getElementById('edit-description').value.trim(),
-          status: document.getElementById('edit-status').value,
-          priority: document.getElementById('edit-priority').value,
-          assigned_to: document.getElementById('edit-assigned-to').value.trim() || null
-        };
-
-        if (!updates.title) {
-          window.app?.services?.ui?.showToast('Title is required', 'error');
+      function safeShowTicketDetails(ticketId) {
+        if (!modalState.appInitialized) {
+          console.log('🚫 Blocked showTicketDetails during initialization:', ticketId);
+          modalState.blockedCalls.push({ type: 'show', ticketId });
           return;
         }
 
-        const saveBtn = document.querySelector('#edit-ticket-modal .btn-primary');
-        if (saveBtn) {
-          saveBtn.textContent = 'Saving...';
-          saveBtn.disabled = true;
+        let ticket = null;
+
+        // Try multiple ways to get the ticket
+        if (window.app?.services?.data) {
+          ticket = window.app.services.data.getTicket(ticketId);
+        } else if (window.tickets) {
+          ticket = window.tickets.find(t => t.id === ticketId);
         }
 
-        if (window.app?.services?.data) {
-          await window.app.services.data.updateTicket(ticketId, updates);
-          window.closeEditModal();
-          window.app.services.ui?.showToast('Ticket updated successfully', 'success');
-          
-          // Refresh the UI
-          if (window.app.services.dashboard) await window.app.services.dashboard.loadDashboardData();
-          if (window.app.services.tickets) window.app.services.tickets.renderTicketsTable();
+        if (ticket) {
+          const lookupData = window.app?.services?.data?.data || null;
+          showTicketModal(ticket, lookupData);
         } else {
-          throw new Error('Data service not available');
+          console.error('Ticket not found:', ticketId);
+          if (window.app?.services?.ui) {
+            window.app.services.ui.showToast('Ticket not found', 'error');
+          }
         }
-      } catch (error) {
-        console.error('Error updating ticket:', error);
-        window.app?.services?.ui?.showToast('Failed to update ticket: ' + error.message, 'error');
-      } finally {
-        const saveBtn = document.querySelector('#edit-ticket-modal .btn-primary');
-        if (saveBtn) {
-          saveBtn.textContent = 'Save Changes';
-          saveBtn.disabled = false;
+      }
+
+      function safeEditTicket(ticketId) {
+        if (!modalState.appInitialized) {
+          console.log('🚫 Blocked editTicket during initialization:', ticketId);
+          modalState.blockedCalls.push({ type: 'edit', ticketId });
+          return;
         }
+
+        let ticket = null;
+
+        // Try multiple ways to get the ticket
+        if (window.app?.services?.data) {
+          ticket = window.app.services.data.getTicket(ticketId);
+        } else if (window.tickets) {
+          ticket = window.tickets.find(t => t.id === ticketId);
+        }
+
+        if (ticket) {
+          showEditModal(ticket);
+        } else {
+          console.error('Ticket not found for edit:', ticketId);
+          if (window.app?.services?.ui) {
+            window.app.services.ui.showToast('Ticket not found', 'error');
+          }
+        }
+      }
+
+      async function saveTicketChanges() {
+        try {
+          const ticketId = document.getElementById('edit-ticket-id')?.value;
+          if (!ticketId) {
+            console.error('No ticket ID found for saving');
+            return;
+          }
+
+          const updates = {
+            title: document.getElementById('edit-title')?.value?.trim() || '',
+            description: document.getElementById('edit-description')?.value?.trim() || '',
+            status: document.getElementById('edit-status')?.value || 'Open',
+            priority: document.getElementById('edit-priority')?.value || 'Medium',
+            assigned_to: document.getElementById('edit-assigned-to')?.value?.trim() || null
+          };
+
+          if (!updates.title) {
+            if (window.app?.services?.ui) {
+              window.app.services.ui.showToast('Title is required', 'error');
+            }
+            return;
+          }
+
+          const saveBtn = document.getElementById('save-ticket-btn');
+          if (saveBtn) {
+            saveBtn.textContent = 'Saving...';
+            saveBtn.disabled = true;
+          }
+
+          if (window.app?.services?.data) {
+            await window.app.services.data.updateTicket(ticketId, updates);
+            hideEditModal();
+            
+            if (window.app.services.ui) {
+              window.app.services.ui.showToast('Ticket updated successfully', 'success');
+            }
+            
+            // Refresh the UI
+            if (window.app.services.dashboard) {
+              await window.app.services.dashboard.loadDashboardData();
+            }
+            if (window.app.services.tickets) {
+              window.app.services.tickets.renderTicketsTable();
+            }
+          } else {
+            throw new Error('Data service not available');
+          }
+        } catch (error) {
+          console.error('Error updating ticket:', error);
+          if (window.app?.services?.ui) {
+            window.app.services.ui.showToast('Failed to update ticket: ' + error.message, 'error');
+          }
+        } finally {
+          const saveBtn = document.getElementById('save-ticket-btn');
+          if (saveBtn) {
+            saveBtn.textContent = 'Save Changes';
+            saveBtn.disabled = false;
+          }
+        }
+      }
+
+      // === EVENT HANDLERS ===
+
+      function setupEventHandlers() {
+        console.log('🎛️ Setting up modal event handlers');
+
+        // Remove any existing handlers first
+        document.removeEventListener('click', handleDocumentClick);
+        document.removeEventListener('keydown', handleKeydown);
+
+        // Add fresh handlers
+        document.addEventListener('click', handleDocumentClick);
+        document.addEventListener('keydown', handleKeydown);
+
+        console.log('✅ Modal event handlers setup complete');
+      }
+
+      function handleDocumentClick(e) {
+        // Handle modal close buttons
+        if (e.target.closest('#ticket-modal .modal-close') || 
+            e.target.closest('#ticket-modal .btn-secondary')) {
+          e.preventDefault();
+          e.stopPropagation();
+          hideTicketModal();
+          return;
+        }
+
+        if (e.target.closest('#edit-ticket-modal .modal-close') || 
+            e.target.closest('#edit-ticket-modal .btn-secondary')) {
+          e.preventDefault();
+          e.stopPropagation();
+          hideEditModal();
+          return;
+        }
+
+        // Handle background clicks
+        if (e.target.id === 'ticket-modal') {
+          hideTicketModal();
+          return;
+        }
+
+        if (e.target.id === 'edit-ticket-modal') {
+          hideEditModal();
+          return;
+        }
+
+        // Handle edit current ticket button
+        if (e.target.closest('#ticket-modal .btn-primary')) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (modalState.currentTicket) {
+            safeEditTicket(modalState.currentTicket.id);
+          }
+          return;
+        }
+
+        // Handle save changes button
+        if (e.target.closest('#save-ticket-btn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          saveTicketChanges();
+          return;
+        }
+      }
+
+      function handleKeydown(e) {
+        if (e.key === 'Escape') {
+          const ticketModal = document.getElementById('ticket-modal');
+          const editModal = document.getElementById('edit-ticket-modal');
+          
+          if (editModal && editModal.style.display === 'flex') {
+            hideEditModal();
+          } else if (ticketModal && ticketModal.style.display === 'flex') {
+            hideTicketModal();
+          }
+        }
+      }
+
+      // === INITIALIZATION ===
+
+      function initializeModalSystem() {
+        console.log('🚀 Initializing modal system');
+
+        // Force hide all modals on load
+        const ticketModal = document.getElementById('ticket-modal');
+        const editModal = document.getElementById('edit-ticket-modal');
+        
+        if (ticketModal) {
+          ticketModal.style.display = 'none';
+          ticketModal.style.visibility = 'hidden';
+          ticketModal.classList.remove('active');
+        }
+        
+        if (editModal) {
+          editModal.style.display = 'none';
+          editModal.style.visibility = 'hidden';
+          editModal.classList.remove('active');
+        }
+
+        // Setup event handlers
+        setupEventHandlers();
+
+        // Replace global functions
+        window.showTicketDetails = safeShowTicketDetails;
+        window.editTicket = safeEditTicket;
+        window.closeTicketModal = hideTicketModal;
+        window.editCurrentTicket = function() {
+          if (modalState.currentTicket) {
+            safeEditTicket(modalState.currentTicket.id);
+          }
+        };
+        window.closeEditModal = hideEditModal;
+        window.saveTicketChanges = saveTicketChanges;
+        window.refreshAssigneeDropdown = populateAssigneeDropdown;
+
+        console.log('✅ Modal system initialized');
+      }
+
+      // === APP INTEGRATION ===
+
+      window.markModalSystemReady = function() {
+        modalState.appInitialized = true;
+        
+        // Process any queued calls
+        if (modalState.blockedCalls.length > 0) {
+          console.log('⚠️ Processing', modalState.blockedCalls.length, 'queued modal calls');
+          modalState.blockedCalls.forEach(call => {
+            setTimeout(() => {
+              if (call.type === 'show') safeShowTicketDetails(call.ticketId);
+              if (call.type === 'edit') safeEditTicket(call.ticketId);
+            }, 100);
+          });
+          modalState.blockedCalls = [];
+        }
+        
+        console.log('🎉 Modal system marked as ready');
+      };
+
+      // Initialize when DOM is ready
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeModalSystem);
+      } else {
+        initializeModalSystem();
+      }
+
+      // Fallback timeout to mark as ready
+      setTimeout(() => {
+        if (!modalState.appInitialized) {
+          console.log('⏰ Timeout reached - marking modal system as ready');
+          window.markModalSystemReady();
+        }
+      }, 3000);
+
+    })();
+
+    // === OTHER GLOBAL FUNCTIONS ===
+
+    window.handleLogout = function() { 
+      if (window.app?.services?.auth) {
+        window.app.services.auth.signOut();
+      } else if (window.authService) {
+        window.authService.signOut();
       }
     };
 
-    window.handleLogout = function() { 
-      window.app?.services?.auth?.signOut(); 
-    };
-
     window.refreshDashboard = function() { 
-      window.app?.refreshDashboard(); 
+      if (window.app) {
+        window.app.refreshDashboard();
+      }
     };
 
     window.clearFilters = function() { 
-      window.app?.services?.tickets?.clearFilters(); 
+      if (window.app?.services?.tickets) {
+        window.app.services.tickets.clearFilters();
+      } else if (window.ticketRenderer) {
+        window.ticketRenderer.clearFilters();
+      }
     };
 
     window.redirectToLogin = function() { 
@@ -863,199 +1115,6 @@
     window.retryAuthentication = function() { 
       location.reload(); 
     };
-
-    // Also populate dropdown when app initializes
-    window.refreshAssigneeDropdown = function() {
-      populateAssigneeDropdown();
-    };
-
-    // Event listeners setup - with protection against multiple additions
-    function setupEventListeners() {
-      if (window.portalEventListenersAdded) {
-        console.log('⚠️ Event listeners already added globally, skipping...');
-        return;
-      }
-      
-      console.log('🎛️ Setting up event listeners (GLOBAL first time)');
-      
-      // Mark as added globally
-      window.portalEventListenersAdded = true;
-
-      // Clear any existing listeners first by cloning elements (nuclear option)
-      const ticketModal = document.getElementById('ticket-modal');
-      const editModal = document.getElementById('edit-ticket-modal');
-      
-      // Force hide modals
-      if (ticketModal) {
-        ticketModal.style.display = 'none';
-        ticketModal.style.visibility = 'hidden';
-      }
-      if (editModal) {
-        editModal.style.display = 'none';
-        editModal.style.visibility = 'hidden';
-      }
-
-      // Define handler functions once
-      const handlers = {
-        ticketModalXClick: function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          console.log('🖱️ Ticket modal X button clicked [SINGLE]');
-          window.closeTicketModal();
-        },
-
-        editModalXClick: function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          console.log('🖱️ Edit modal X button clicked [SINGLE]');
-          window.closeEditModal();
-        },
-
-        editModalCancel: function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          console.log('🖱️ Edit modal Cancel button clicked [SINGLE]');
-          window.closeEditModal();
-        },
-
-        ticketModalClose: function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          console.log('🖱️ Ticket modal Close button clicked [SINGLE]');
-          window.closeTicketModal();
-        },
-
-        ticketBgClick: function(e) {
-          if (e.target === ticketModal) {
-            console.log('🖱️ Clicked outside ticket modal [SINGLE]');
-            window.closeTicketModal();
-          }
-        },
-
-        editBgClick: function(e) {
-          if (e.target === editModal) {
-            console.log('🖱️ Clicked outside edit modal [SINGLE]');
-            window.closeEditModal();
-          }
-        },
-
-        contentClick: function(e) {
-          const modalContent = e.target.closest('.modal-content');
-          if (modalContent) {
-            e.stopPropagation();
-          }
-        },
-
-        escKey: function(e) {
-          if (e.key === 'Escape') {
-            if (ticketModal && ticketModal.style.display === 'flex') {
-              console.log('⌨️ ESC pressed - closing ticket modal [SINGLE]');
-              window.closeTicketModal();
-            }
-            if (editModal && editModal.style.display === 'flex') {
-              console.log('⌨️ ESC pressed - closing edit modal [SINGLE]');
-              window.closeEditModal();
-            }
-          }
-        }
-      };
-
-      // Store handlers globally for potential cleanup
-      window.portalHandlers = handlers;
-
-      // Add event listeners using our handlers
-      const addListener = (element, event, handler, description) => {
-        if (element) {
-          element.addEventListener(event, handler);
-          console.log('✅ Added', description);
-          return true;
-        }
-        return false;
-      };
-
-      // Modal close button handlers
-      addListener(
-        document.querySelector('#ticket-modal .modal-close'), 
-        'click', 
-        handlers.ticketModalXClick, 
-        'Ticket modal X button'
-      );
-      
-      addListener(
-        document.querySelector('#edit-ticket-modal .modal-close'), 
-        'click', 
-        handlers.editModalXClick, 
-        'Edit modal X button'
-      );
-      
-      addListener(
-        document.querySelector('#edit-ticket-modal .btn-secondary'), 
-        'click', 
-        handlers.editModalCancel, 
-        'Edit modal Cancel button'
-      );
-      
-      addListener(
-        document.querySelector('#ticket-modal .btn-secondary'), 
-        'click', 
-        handlers.ticketModalClose, 
-        'Ticket modal Close button'
-      );
-
-      // Background clicks
-      if (ticketModal) {
-        ticketModal.addEventListener('click', handlers.ticketBgClick);
-        console.log('✅ Added ticket modal background click');
-      }
-
-      if (editModal) {
-        editModal.addEventListener('click', handlers.editBgClick);
-        console.log('✅ Added edit modal background click');
-      }
-
-      // Document-level handlers
-      document.addEventListener('click', handlers.contentClick);
-      document.addEventListener('keydown', handlers.escKey);
-
-      console.log('🎛️ All event listeners setup complete (GLOBAL)');
-    }
-
-    // Single DOM ready handler
-    function initializeOnDOMReady() {
-      if (window.portalDOMReady) {
-        console.log('⚠️ DOM already processed, skipping...');
-        return;
-      }
-      window.portalDOMReady = true;
-
-      console.log('🔒 DOM loaded - forcing modals hidden (GLOBAL)');
-      setupEventListeners();
-
-      // --- CRITICAL FIX: Prevent clicks inside modal-content from closing modal ---
-      // This ensures that only clicks on the actual background (modal overlay) close the modal
-      document.querySelectorAll('.modal-content').forEach(content => {
-        content.addEventListener('click', function(e) {
-          e.stopPropagation();
-          console.log('🛡️ Stopped propagation from modal content click');
-        });
-      });
-      console.log('🛡️ Added click propagation protection for modal content');
-
-      // Populate dropdown when DOM is ready
-      setTimeout(() => {
-        populateAssigneeDropdown();
-      }, 2000);
-    }
-
-    // Handle both cases: DOM already ready or wait for it
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initializeOnDOMReady);
-    } else {
-      // DOM already ready
-      initializeOnDOMReady();
-    }
-
-    })(); // End of IIFE (Immediately Invoked Function Expression)
   </script>
 
   <!-- Application Scripts -->

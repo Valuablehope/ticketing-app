@@ -44,6 +44,11 @@ class HISPortalApp {
       // Mark as initialized
       this.isInitialized = true;
 
+      // CRITICAL: Notify modal system that app is ready
+      if (typeof window.markModalSystemReady === 'function') {
+        window.markModalSystemReady();
+      }
+
       console.log('✅ Portal initialization complete');
       this.services.ui.showToast('Portal loaded successfully', 'success');
 
@@ -304,9 +309,15 @@ class HISPortalApp {
    */
   setupKeyboardShortcuts() {
     document.addEventListener('keydown', (e) => {
-      // Escape key - close modals
+      // Skip if modal system will handle ESC
       if (e.key === 'Escape') {
-        this.services.ui.closeTicketModal();
+        const ticketModal = document.getElementById('ticket-modal');
+        const editModal = document.getElementById('edit-ticket-modal');
+        if ((ticketModal && ticketModal.style.display === 'flex') || 
+            (editModal && editModal.style.display === 'flex')) {
+          // Let modal system handle this
+          return;
+        }
       }
 
       // Ctrl/Cmd + R - refresh dashboard
@@ -481,27 +492,7 @@ class HISPortalApp {
 }
 
 // === GLOBAL FUNCTIONS FOR COMPATIBILITY ===
-
-/**
- * Global function to show ticket details
- */
-window.showTicketDetails = function(ticketId) {
-  if (window.dataService && window.uiComponents) {
-    const ticket = window.dataService.getTicket(ticketId);
-    if (ticket) {
-      window.uiComponents.showTicketModal(ticket, window.dataService.data);
-    }
-  }
-};
-
-/**
- * Global function to close ticket modal
- */
-window.closeTicketModal = function() {
-  if (window.uiComponents) {
-    window.uiComponents.closeTicketModal();
-  }
-};
+// Note: Modal-related functions are now handled by the modal system
 
 /**
  * Global function to handle logout

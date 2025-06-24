@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Create HIS User</title>
 
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   
   <!-- Base styles -->
     <link rel="stylesheet" href="css/base/variables.css">
@@ -22,31 +22,262 @@
     
 </head>
 <body>
+  <!-- Background Decorative Elements -->
+  <div class="page-background">
+    <div class="floating-orb orb-1"></div>
+    <div class="floating-orb orb-2"></div>
+    <div class="floating-orb orb-3"></div>
+  </div>
+
   <div class="container">
-    <div class="card create-user-card">
-      <h2>Create New HIS User</h2>
-      <form id="create-user-form">
-        <div class="input-group vertical">
-          <input type="text"    id="full-name"       placeholder="Full Name" required />
-          <input type="email"   id="user-email"      placeholder="Email" required />
-          <input type="password"id="user-password"   placeholder="Password" required />
-          <select id="user-role" required>
-            <option value="" disabled selected>Role</option>
-            <option value="admin">Admin</option>
-            <option value="team_lead">Team Lead</option>
-            <option value="officer">Officer</option>
-          </select>
-          <select id="user-base" required>
-            <option value="" disabled selected>Base</option>
-          </select>
-          <input type="text"    id="user-department" placeholder="Department" />
-          <input type="text"    id="user-team"       placeholder="Team" />
+    <!-- Header Section -->
+    <div class="page-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="8.5" cy="7" r="4"/>
+            <path d="M20 8v6M23 11h-6"/>
+          </svg>
         </div>
-        <button type="submit" class="btn create-user-btn">Create User</button>
+        <div class="header-text">
+          <h1>Create New User</h1>
+          <p>Add a new team member to the HIS system</p>
+        </div>
+      </div>
+      <div class="progress-indicator">
+        <div class="progress-bar">
+          <div class="progress-fill"></div>
+        </div>
+        <span class="progress-text">Step 1 of 1</span>
+      </div>
+    </div>
+
+    <!-- Main Form Card -->
+    <div class="main-card">
+      <form id="create-user-form" class="user-creation-form">
+        <!-- Personal Information Section -->
+        <div class="form-section personal-info">
+          <div class="section-header">
+            <div class="section-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <div class="section-title">
+              <h2>Personal Information</h2>
+              <p>Basic user details and identification</p>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="input-group-enhanced full-width">
+              <div class="input-wrapper">
+                <input type="text" id="full-name" placeholder=" " required />
+                <label for="full-name">Full Name</label>
+                <div class="input-decoration"></div>
+              </div>
+            </div>
+
+            <div class="input-group-enhanced full-width">
+              <div class="input-wrapper">
+                <input type="email" id="user-email" placeholder=" " required />
+                <label for="user-email">Email Address</label>
+                <div class="input-decoration"></div>
+              </div>
+            </div>
+
+            <div class="input-group-enhanced full-width">
+              <div class="input-wrapper">
+                <input type="password" id="user-password" placeholder=" " required />
+                <label for="user-password">Password</label>
+                <div class="input-decoration"></div>
+                <div class="password-strength">
+                  <div class="strength-bar">
+                    <div class="strength-fill"></div>
+                  </div>
+                  <span class="strength-text">Enter password</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Role & Access Section -->
+        <div class="form-section role-access">
+          <div class="section-header">
+            <div class="section-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M12 15l-2-5l6-2l-2 5l-2 2z"/>
+                <path d="M8 8l4-4l4 4"/>
+                <path d="M7.5 7.5L4 12l3.5 4.5"/>
+                <path d="M16.5 7.5L20 12l-3.5 4.5"/>
+              </svg>
+            </div>
+            <div class="section-title">
+              <h2>Role & Access</h2>
+              <p>Define user permissions and responsibilities</p>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="role-selector">
+              <label class="field-label">User Role</label>
+              <div class="role-options">
+                <div class="role-option" data-role="admin">
+                  <input type="radio" name="role" value="admin" id="role-admin" required />
+                  <label for="role-admin">
+                    <div class="role-card">
+                      <div class="role-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                        </svg>
+                      </div>
+                      <div class="role-content">
+                        <h3>Admin</h3>
+                        <p>Full system access and user management</p>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+
+                <div class="role-option" data-role="team_lead">
+                  <input type="radio" name="role" value="team_lead" id="role-team-lead" required />
+                  <label for="role-team-lead">
+                    <div class="role-card">
+                      <div class="role-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                          <circle cx="9" cy="7" r="4"/>
+                          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                      </div>
+                      <div class="role-content">
+                        <h3>Team Lead</h3>
+                        <p>Team management and oversight</p>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+
+                <div class="role-option" data-role="officer">
+                  <input type="radio" name="role" value="officer" id="role-officer" required />
+                  <label for="role-officer">
+                    <div class="role-card">
+                      <div class="role-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                          <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                      </div>
+                      <div class="role-content">
+                        <h3>Officer</h3>
+                        <p>Standard access and operations</p>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Department & Location Section -->
+        <div class="form-section department-location">
+          <div class="section-header">
+            <div class="section-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+            </div>
+            <div class="section-title">
+              <h2>Department & Location</h2>
+              <p>Organizational structure and base assignment</p>
+            </div>
+          </div>
+
+          <div class="form-grid two-column">
+            <div class="input-group-enhanced">
+              <div class="select-wrapper-enhanced">
+                <select id="user-base" required>
+                  <option value="" disabled selected>Select Base</option>
+                </select>
+                <label for="user-base">Base Location</label>
+                <div class="select-arrow">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <polyline points="6,9 12,15 18,9"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="input-group-enhanced">
+              <div class="select-wrapper-enhanced">
+                <select id="user-department" required>
+                  <option value="" disabled selected>Select Department</option>
+                </select>
+                <label for="user-department">Department</label>
+                <div class="select-arrow">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <polyline points="6,9 12,15 18,9"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="input-group-enhanced full-width">
+              <div class="select-wrapper-enhanced">
+                <select id="user-team" disabled>
+                  <option value="" disabled selected>Select Team</option>
+                </select>
+                <label for="user-team">Team / Unit</label>
+                <div class="select-arrow">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <polyline points="6,9 12,15 18,9"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="field-hint">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M9,12l2,2 4,-4"/>
+                </svg>
+                Teams will be filtered based on selected department
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <div class="action-buttons">
+            <a href="portal.html" class="btn btn-secondary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <polyline points="15,18 9,12 15,6"/>
+              </svg>
+              Cancel
+            </a>
+            <button type="submit" class="btn btn-primary create-user-btn">
+              <span class="btn-text">Create User</span>
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="8.5" cy="7" r="4"/>
+                <path d="M20 8v6M23 11h-6"/>
+              </svg>
+              <div class="btn-loading">
+                <div class="spinner"></div>
+              </div>
+            </button>
+          </div>
+        </div>
       </form>
-      <div id="create-error"   class="error-message"></div>
-      <div id="create-success" class="success-message"></div>
-      <a href="portal.html" class="btn back-btn" style="margin-top:1rem;">← Back to Dashboard</a>
+
+      <!-- Status Messages -->
+      <div id="create-error" class="status-message error-message"></div>
+      <div id="create-success" class="status-message success-message"></div>
     </div>
   </div>
 
