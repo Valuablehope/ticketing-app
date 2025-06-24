@@ -8,7 +8,7 @@ class DataService {
       categories: {},
       users: [],
       usersLookup: {}, // Add lookup for user ID to full name
-      stats: null
+      stats: null,
     };
     this.isLoading = false;
     this.lastRefresh = null;
@@ -20,13 +20,13 @@ class DataService {
    */
   async initialize() {
     try {
-      console.log('🔄 Initializing Data Service...');
+      console.log("🔄 Initializing Data Service...");
       await this.refreshData();
       this.setupRealtimeSubscriptions();
-      console.log('✅ Data Service initialized successfully');
+      console.log("✅ Data Service initialized successfully");
       return true;
     } catch (error) {
-      console.error('❌ Data Service initialization failed:', error);
+      console.error("❌ Data Service initialization failed:", error);
       throw error;
     }
   }
@@ -36,51 +36,53 @@ class DataService {
    */
   async refreshData() {
     if (this.isLoading) {
-      console.log('⏳ Data refresh already in progress...');
+      console.log("⏳ Data refresh already in progress...");
       return;
     }
 
     this.isLoading = true;
-    
+
     try {
-      console.log('🔄 Refreshing all data...');
-      
+      console.log("🔄 Refreshing all data...");
+
       // Load all data in parallel for better performance
-      const [ticketsResult, basesResult, categoriesResult, usersResult] = await Promise.allSettled([
-        this.loadTickets(),
-        this.loadBases(),
-        this.loadCategories(),
-        this.loadUsers()
-      ]);
+      const [ticketsResult, basesResult, categoriesResult, usersResult] =
+        await Promise.allSettled([
+          this.loadTickets(),
+          this.loadBases(),
+          this.loadCategories(),
+          this.loadUsers(),
+        ]);
 
       // Log any errors but don't throw to allow partial data loading
-      if (ticketsResult.status === 'rejected') {
-        console.warn('⚠️ Failed to load tickets:', ticketsResult.reason);
+      if (ticketsResult.status === "rejected") {
+        console.warn("⚠️ Failed to load tickets:", ticketsResult.reason);
       }
-      if (basesResult.status === 'rejected') {
-        console.warn('⚠️ Failed to load bases:', basesResult.reason);
+      if (basesResult.status === "rejected") {
+        console.warn("⚠️ Failed to load bases:", basesResult.reason);
       }
-      if (categoriesResult.status === 'rejected') {
-        console.warn('⚠️ Failed to load categories:', categoriesResult.reason);
+      if (categoriesResult.status === "rejected") {
+        console.warn("⚠️ Failed to load categories:", categoriesResult.reason);
       }
-      if (usersResult.status === 'rejected') {
-        console.warn('⚠️ Failed to load users:', usersResult.reason);
+      if (usersResult.status === "rejected") {
+        console.warn("⚠️ Failed to load users:", usersResult.reason);
       }
 
       // Calculate statistics
       this.calculateStats();
-      
+
       this.lastRefresh = new Date();
       this.isLoading = false;
-      
+
       // Notify all registered callbacks
       this.notifyRefreshCallbacks();
-      
-      console.log(`✅ Data refresh complete. Loaded ${this.data.tickets.length} tickets`);
-      
+
+      console.log(
+        `✅ Data refresh complete. Loaded ${this.data.tickets.length} tickets`
+      );
     } catch (error) {
       this.isLoading = false;
-      console.error('❌ Error during data refresh:', error);
+      console.error("❌ Error during data refresh:", error);
       throw error;
     }
   }
@@ -91,18 +93,20 @@ class DataService {
   async loadTickets() {
     try {
       const { data: ticketsData, error } = await this.supabase
-        .from('tickets')
-        .select(`
+        .from("tickets")
+        .select(
+          `
           *,
           base:bases(id, name),
           category:ticket_cats(id, name)
-        `)
-        .order('created_at', { ascending: false });
+        `
+        )
+        .order("created_at", { ascending: false });
 
       if (error) {
         // Handle case where tables don't exist yet
-        if (error.code === '42P01') {
-          console.warn('⚠️ Tickets table does not exist yet');
+        if (error.code === "42P01") {
+          console.warn("⚠️ Tickets table does not exist yet");
           this.data.tickets = [];
           return;
         }
@@ -110,7 +114,7 @@ class DataService {
       }
 
       // Process and enrich ticket data
-      this.data.tickets = (ticketsData || []).map(ticket => ({
+      this.data.tickets = (ticketsData || []).map((ticket) => ({
         ...ticket,
         // Add computed fields
         isOverdue: this.isTicketOverdue(ticket),
@@ -120,15 +124,15 @@ class DataService {
         created_at_formatted: this.formatDate(ticket.created_at),
         updated_at_formatted: this.formatDate(ticket.updated_at),
         // Normalize status for filtering
-        status_normalized: ticket.status?.toLowerCase().replace(/\s+/g, '_'),
+        status_normalized: ticket.status?.toLowerCase().replace(/\s+/g, "_"),
         priority_normalized: ticket.priority?.toLowerCase(),
         // Add user full name for assigned_to
-        assigned_to_name: this.getUserFullName(ticket.assigned_to)
+        assigned_to_name: this.getUserFullName(ticket.assigned_to),
       }));
 
       console.log(`📋 Loaded ${this.data.tickets.length} tickets`);
     } catch (error) {
-      console.error('❌ Error loading tickets:', error);
+      console.error("❌ Error loading tickets:", error);
       this.data.tickets = [];
       throw error;
     }
@@ -141,13 +145,13 @@ class DataService {
     try {
       // Try with minimal columns first
       const { data: basesData, error } = await this.supabase
-        .from('bases')
-        .select('id, name')
-        .order('name');
+        .from("bases")
+        .select("id, name")
+        .order("name");
 
       if (error) {
-        if (error.code === '42P01') {
-          console.warn('⚠️ Bases table does not exist yet');
+        if (error.code === "42P01") {
+          console.warn("⚠️ Bases table does not exist yet");
           this.data.bases = {};
           return;
         }
@@ -157,17 +161,14 @@ class DataService {
       // Convert array to lookup object
       this.data.bases = {};
       if (basesData) {
-        basesData.forEach(base => {
-          this.data.bases[base.id] = {
-            id: base.id,
-            name: base.name
-          };
+        basesData.forEach((base) => {
+          this.data.bases[base.id] = base.name; // <-- just the string
         });
       }
 
       console.log(`🏢 Loaded ${Object.keys(this.data.bases).length} bases`);
     } catch (error) {
-      console.error('❌ Error loading bases:', error);
+      console.error("❌ Error loading bases:", error);
       this.data.bases = {};
       // Don't throw - let app continue with empty bases
     }
@@ -180,13 +181,13 @@ class DataService {
     try {
       // Try with minimal columns first
       const { data: categoriesData, error } = await this.supabase
-        .from('ticket_cats')
-        .select('id, name')
-        .order('name');
+        .from("ticket_cats")
+        .select("id, name")
+        .order("name");
 
       if (error) {
-        if (error.code === '42P01') {
-          console.warn('⚠️ Categories table does not exist yet');
+        if (error.code === "42P01") {
+          console.warn("⚠️ Categories table does not exist yet");
           this.data.categories = {};
           return;
         }
@@ -196,17 +197,16 @@ class DataService {
       // Convert array to lookup object
       this.data.categories = {};
       if (categoriesData) {
-        categoriesData.forEach(category => {
-          this.data.categories[category.id] = {
-            id: category.id,
-            name: category.name
-          };
+        categoriesData.forEach((category) => {
+          this.data.categories[category.id] = category.name; // <-- just the string
         });
       }
 
-      console.log(`📂 Loaded ${Object.keys(this.data.categories).length} categories`);
+      console.log(
+        `📂 Loaded ${Object.keys(this.data.categories).length} categories`
+      );
     } catch (error) {
-      console.error('❌ Error loading categories:', error);
+      console.error("❌ Error loading categories:", error);
       this.data.categories = {};
       // Don't throw - let app continue with empty categories
     }
@@ -219,13 +219,13 @@ class DataService {
     try {
       // Try with his_users table
       const { data: usersData, error } = await this.supabase
-        .from('his_users')
-        .select('id, full_name, role')
-        .order('full_name');
+        .from("his_users")
+        .select("id, full_name, role")
+        .order("full_name");
 
       if (error) {
-        if (error.code === '42P01') {
-          console.warn('⚠️ his_users table does not exist yet');
+        if (error.code === "42P01") {
+          console.warn("⚠️ his_users table does not exist yet");
           this.data.users = [];
           this.data.usersLookup = {};
           return;
@@ -234,23 +234,25 @@ class DataService {
       }
 
       this.data.users = usersData || [];
-      
+
       // Create lookup object for user ID to full name mapping
       this.data.usersLookup = {};
       if (usersData) {
-        usersData.forEach(user => {
+        usersData.forEach((user) => {
           this.data.usersLookup[user.id] = {
             id: user.id,
             //email: user.email,
             full_name: user.full_name,
-            role: user.role
+            role: user.role,
           };
         });
       }
 
-      console.log(`👥 Loaded ${this.data.users.length} users from his_users table`);
+      console.log(
+        `👥 Loaded ${this.data.users.length} users from his_users table`
+      );
     } catch (error) {
-      console.error('❌ Error loading users from his_users table:', error);
+      console.error("❌ Error loading users from his_users table:", error);
       this.data.users = [];
       this.data.usersLookup = {};
       // Don't throw - let app continue with empty users
@@ -282,14 +284,14 @@ class DataService {
       const newTicket = {
         ...ticketData,
         ticket_number: await this.generateTicketNumber(),
-        status: ticketData.status || 'Open',
-        priority: ticketData.priority || 'Medium',
+        status: ticketData.status || "Open",
+        priority: ticketData.priority || "Medium",
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
 
       const { data, error } = await this.supabase
-        .from('tickets')
+        .from("tickets")
         .insert([newTicket])
         .select()
         .single();
@@ -302,7 +304,7 @@ class DataService {
         assigned_to_name: this.getUserFullName(data.assigned_to),
         isOverdue: this.isTicketOverdue(data),
         timeOpen: this.calculateTimeOpen(data),
-        priorityScore: this.calculatePriorityScore(data)
+        priorityScore: this.calculatePriorityScore(data),
       };
 
       this.data.tickets.unshift(enrichedTicket);
@@ -312,7 +314,7 @@ class DataService {
       console.log(`✅ Created ticket #${data.ticket_number}`);
       return enrichedTicket;
     } catch (error) {
-      console.error('❌ Error creating ticket:', error);
+      console.error("❌ Error creating ticket:", error);
       throw error;
     }
   }
@@ -324,29 +326,29 @@ class DataService {
     try {
       const updateData = {
         ...updates,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
 
       const { data, error } = await this.supabase
-        .from('tickets')
+        .from("tickets")
         .update(updateData)
-        .eq('id', ticketId)
+        .eq("id", ticketId)
         .select()
         .single();
 
       if (error) throw error;
 
       // Update local data
-      const ticketIndex = this.data.tickets.findIndex(t => t.id === ticketId);
+      const ticketIndex = this.data.tickets.findIndex((t) => t.id === ticketId);
       if (ticketIndex !== -1) {
-        this.data.tickets[ticketIndex] = { 
-          ...this.data.tickets[ticketIndex], 
+        this.data.tickets[ticketIndex] = {
+          ...this.data.tickets[ticketIndex],
           ...data,
           // Recalculate computed fields
           assigned_to_name: this.getUserFullName(data.assigned_to),
           isOverdue: this.isTicketOverdue(data),
           timeOpen: this.calculateTimeOpen(data),
-          priorityScore: this.calculatePriorityScore(data)
+          priorityScore: this.calculatePriorityScore(data),
         };
       }
 
@@ -356,7 +358,7 @@ class DataService {
       console.log(`✅ Updated ticket #${data.ticket_number || ticketId}`);
       return this.data.tickets[ticketIndex];
     } catch (error) {
-      console.error('❌ Error updating ticket:', error);
+      console.error("❌ Error updating ticket:", error);
       throw error;
     }
   }
@@ -367,17 +369,19 @@ class DataService {
   async deleteTicket(ticketId) {
     try {
       const { error } = await this.supabase
-        .from('tickets')
+        .from("tickets")
         .delete()
-        .eq('id', ticketId);
+        .eq("id", ticketId);
 
       if (error) throw error;
 
       // Remove from local data
-      const ticketIndex = this.data.tickets.findIndex(t => t.id === ticketId);
+      const ticketIndex = this.data.tickets.findIndex((t) => t.id === ticketId);
       if (ticketIndex !== -1) {
         const deletedTicket = this.data.tickets.splice(ticketIndex, 1)[0];
-        console.log(`🗑️ Deleted ticket #${deletedTicket.ticket_number || ticketId}`);
+        console.log(
+          `🗑️ Deleted ticket #${deletedTicket.ticket_number || ticketId}`
+        );
       }
 
       this.calculateStats();
@@ -385,7 +389,7 @@ class DataService {
 
       return true;
     } catch (error) {
-      console.error('❌ Error deleting ticket:', error);
+      console.error("❌ Error deleting ticket:", error);
       throw error;
     }
   }
@@ -397,25 +401,27 @@ class DataService {
     try {
       const updateData = {
         ...updates,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
 
       const { data, error } = await this.supabase
-        .from('tickets')
+        .from("tickets")
         .update(updateData)
-        .in('id', ticketIds)
+        .in("id", ticketIds)
         .select();
 
       if (error) throw error;
 
       // Update local data
-      data.forEach(updatedTicket => {
-        const ticketIndex = this.data.tickets.findIndex(t => t.id === updatedTicket.id);
+      data.forEach((updatedTicket) => {
+        const ticketIndex = this.data.tickets.findIndex(
+          (t) => t.id === updatedTicket.id
+        );
         if (ticketIndex !== -1) {
-          this.data.tickets[ticketIndex] = { 
-            ...this.data.tickets[ticketIndex], 
+          this.data.tickets[ticketIndex] = {
+            ...this.data.tickets[ticketIndex],
             ...updatedTicket,
-            assigned_to_name: this.getUserFullName(updatedTicket.assigned_to)
+            assigned_to_name: this.getUserFullName(updatedTicket.assigned_to),
           };
         }
       });
@@ -426,7 +432,7 @@ class DataService {
       console.log(`✅ Bulk updated ${data.length} tickets`);
       return data;
     } catch (error) {
-      console.error('❌ Error bulk updating tickets:', error);
+      console.error("❌ Error bulk updating tickets:", error);
       throw error;
     }
   }
@@ -440,55 +446,68 @@ class DataService {
     // Text search
     if (filters.search) {
       const searchTerm = filters.search.toLowerCase();
-      filtered = filtered.filter(ticket => 
-        ticket.title?.toLowerCase().includes(searchTerm) ||
-        ticket.description?.toLowerCase().includes(searchTerm) ||
-        ticket.ticket_number?.toLowerCase().includes(searchTerm) ||
-        ticket.submitter_name?.toLowerCase().includes(searchTerm) ||
-        ticket.submitter_email?.toLowerCase().includes(searchTerm) ||
-        ticket.assigned_to_name?.toLowerCase().includes(searchTerm)
+      filtered = filtered.filter(
+        (ticket) =>
+          ticket.title?.toLowerCase().includes(searchTerm) ||
+          ticket.description?.toLowerCase().includes(searchTerm) ||
+          ticket.ticket_number?.toLowerCase().includes(searchTerm) ||
+          ticket.submitter_name?.toLowerCase().includes(searchTerm) ||
+          ticket.submitter_email?.toLowerCase().includes(searchTerm) ||
+          ticket.assigned_to_name?.toLowerCase().includes(searchTerm)
       );
     }
 
     // Status filter
-    if (filters.status && filters.status !== '') {
-      filtered = filtered.filter(ticket => ticket.status === filters.status);
+    if (filters.status && filters.status !== "") {
+      filtered = filtered.filter((ticket) => ticket.status === filters.status);
     }
 
     // Priority filter
-    if (filters.priority && filters.priority !== '') {
-      filtered = filtered.filter(ticket => ticket.priority === filters.priority);
+    if (filters.priority && filters.priority !== "") {
+      filtered = filtered.filter(
+        (ticket) => ticket.priority === filters.priority
+      );
     }
 
     // Base filter
-    if (filters.base_id && filters.base_id !== '') {
-      filtered = filtered.filter(ticket => ticket.base_id === filters.base_id);
+    if (filters.base_id && filters.base_id !== "") {
+      filtered = filtered.filter(
+        (ticket) => ticket.base_id === filters.base_id
+      );
     }
 
     // Category filter
-    if (filters.category_id && filters.category_id !== '') {
-      filtered = filtered.filter(ticket => ticket.category_id === filters.category_id);
+    if (filters.category_id && filters.category_id !== "") {
+      filtered = filtered.filter(
+        (ticket) => ticket.category_id === filters.category_id
+      );
     }
 
     // Assignee filter
-    if (filters.assigned_to && filters.assigned_to !== '') {
-      filtered = filtered.filter(ticket => ticket.assigned_to === filters.assigned_to);
+    if (filters.assigned_to && filters.assigned_to !== "") {
+      filtered = filtered.filter(
+        (ticket) => ticket.assigned_to === filters.assigned_to
+      );
     }
 
     // Date range filter
     if (filters.dateFrom) {
       const fromDate = new Date(filters.dateFrom);
-      filtered = filtered.filter(ticket => new Date(ticket.created_at) >= fromDate);
+      filtered = filtered.filter(
+        (ticket) => new Date(ticket.created_at) >= fromDate
+      );
     }
 
     if (filters.dateTo) {
       const toDate = new Date(filters.dateTo);
-      filtered = filtered.filter(ticket => new Date(ticket.created_at) <= toDate);
+      filtered = filtered.filter(
+        (ticket) => new Date(ticket.created_at) <= toDate
+      );
     }
 
     // Overdue filter
     if (filters.overdue === true) {
-      filtered = filtered.filter(ticket => ticket.isOverdue);
+      filtered = filtered.filter((ticket) => ticket.isOverdue);
     }
 
     // Sort results
@@ -498,19 +517,19 @@ class DataService {
         let bValue = b[filters.sortBy];
 
         // Handle date sorting
-        if (filters.sortBy.includes('_at')) {
+        if (filters.sortBy.includes("_at")) {
           aValue = new Date(aValue);
           bValue = new Date(bValue);
         }
 
         // Handle priority sorting
-        if (filters.sortBy === 'priority') {
-          const priorityOrder = { 'High': 3, 'Medium': 2, 'Low': 1 };
+        if (filters.sortBy === "priority") {
+          const priorityOrder = { High: 3, Medium: 2, Low: 1 };
           aValue = priorityOrder[aValue] || 0;
           bValue = priorityOrder[bValue] || 0;
         }
 
-        if (filters.sortDirection === 'desc') {
+        if (filters.sortDirection === "desc") {
           return aValue < bValue ? 1 : -1;
         } else {
           return aValue > bValue ? 1 : -1;
@@ -534,21 +553,21 @@ class DataService {
    * Get single ticket by ID
    */
   getTicket(id) {
-    return this.data.tickets.find(t => t.id === id);
+    return this.data.tickets.find((t) => t.id === id);
   }
 
   /**
    * Get tickets by status
    */
   getTicketsByStatus(status) {
-    return this.data.tickets.filter(t => t.status === status);
+    return this.data.tickets.filter((t) => t.status === status);
   }
 
   /**
    * Get tickets by priority
    */
   getTicketsByPriority(priority) {
-    return this.data.tickets.filter(t => t.priority === priority);
+    return this.data.tickets.filter((t) => t.priority === priority);
   }
 
   /**
@@ -564,7 +583,7 @@ class DataService {
    * Get overdue tickets
    */
   getOverdueTickets() {
-    return this.data.tickets.filter(t => t.isOverdue);
+    return this.data.tickets.filter((t) => t.isOverdue);
   }
 
   /**
@@ -606,8 +625,12 @@ class DataService {
    * Get assignable users (users with appropriate roles)
    */
   getAssignableUsers() {
-    return this.data.users.filter(user => 
-      user.role && ['admin', 'technician', 'support', 'staff'].includes(user.role.toLowerCase())
+    return this.data.users.filter(
+      (user) =>
+        user.role &&
+        ["admin", "technician", "support", "staff"].includes(
+          user.role.toLowerCase()
+        )
     );
   }
 
@@ -626,34 +649,38 @@ class DataService {
     this.data.stats = {
       // Basic counts
       total: tickets.length,
-      open: tickets.filter(t => t.status === 'Open').length,
-      inProgress: tickets.filter(t => t.status === 'In Progress').length,
-      resolved: tickets.filter(t => t.status === 'Resolved').length,
-      closed: tickets.filter(t => t.status === 'Closed').length,
+      open: tickets.filter((t) => t.status === "Open").length,
+      inProgress: tickets.filter((t) => t.status === "In Progress").length,
+      resolved: tickets.filter((t) => t.status === "Resolved").length,
+      closed: tickets.filter((t) => t.status === "Closed").length,
 
       // Time-based counts
-      createdToday: tickets.filter(t => new Date(t.created_at) >= today).length,
-      createdThisWeek: tickets.filter(t => new Date(t.created_at) >= thisWeek).length,
-      createdThisMonth: tickets.filter(t => new Date(t.created_at) >= thisMonth).length,
-      
-      resolvedToday: tickets.filter(t => 
-        t.status === 'Resolved' && new Date(t.updated_at) >= today
+      createdToday: tickets.filter((t) => new Date(t.created_at) >= today)
+        .length,
+      createdThisWeek: tickets.filter((t) => new Date(t.created_at) >= thisWeek)
+        .length,
+      createdThisMonth: tickets.filter(
+        (t) => new Date(t.created_at) >= thisMonth
+      ).length,
+
+      resolvedToday: tickets.filter(
+        (t) => t.status === "Resolved" && new Date(t.updated_at) >= today
       ).length,
 
       // Priority distribution
-      highPriority: tickets.filter(t => t.priority === 'High').length,
-      mediumPriority: tickets.filter(t => t.priority === 'Medium').length,
-      lowPriority: tickets.filter(t => t.priority === 'Low').length,
+      highPriority: tickets.filter((t) => t.priority === "High").length,
+      mediumPriority: tickets.filter((t) => t.priority === "Medium").length,
+      lowPriority: tickets.filter((t) => t.priority === "Low").length,
 
       // Other metrics
-      overdue: tickets.filter(t => t.isOverdue).length,
-      unassigned: tickets.filter(t => !t.assigned_to).length,
+      overdue: tickets.filter((t) => t.isOverdue).length,
+      unassigned: tickets.filter((t) => !t.assigned_to).length,
       avgResolutionTime: this.calculateAverageResolutionTime(tickets),
 
       // Status distribution
       statusDistribution: this.getStatusDistribution(),
       priorityDistribution: this.getPriorityDistribution(),
-      assigneeWorkload: this.getAssigneeWorkload()
+      assigneeWorkload: this.getAssigneeWorkload(),
     };
   }
 
@@ -669,8 +696,8 @@ class DataService {
    */
   getStatusDistribution() {
     const distribution = {};
-    this.data.tickets.forEach(ticket => {
-      const status = ticket.status || 'Unknown';
+    this.data.tickets.forEach((ticket) => {
+      const status = ticket.status || "Unknown";
       distribution[status] = (distribution[status] || 0) + 1;
     });
     return distribution;
@@ -681,8 +708,8 @@ class DataService {
    */
   getPriorityDistribution() {
     const distribution = {};
-    this.data.tickets.forEach(ticket => {
-      const priority = ticket.priority || 'Unknown';
+    this.data.tickets.forEach((ticket) => {
+      const priority = ticket.priority || "Unknown";
       distribution[priority] = (distribution[priority] || 0) + 1;
     });
     return distribution;
@@ -693,35 +720,42 @@ class DataService {
    */
   getAssigneeWorkload() {
     const workload = {};
-    this.data.tickets.forEach(ticket => {
+    this.data.tickets.forEach((ticket) => {
       // Use full name if available, otherwise use 'Unassigned' or the user ID
-      const assigneeName = ticket.assigned_to_name || (ticket.assigned_to ? `User ${ticket.assigned_to}` : 'Unassigned');
-      
+      const assigneeName =
+        ticket.assigned_to_name ||
+        (ticket.assigned_to ? `User ${ticket.assigned_to}` : "Unassigned");
+
       if (!workload[assigneeName]) {
-        workload[assigneeName] = { open: 0, closed: 0, total: 0, inProgress: 0 };
+        workload[assigneeName] = {
+          open: 0,
+          closed: 0,
+          total: 0,
+          inProgress: 0,
+        };
       }
-      
+
       workload[assigneeName].total++;
-      
-      switch(ticket.status) {
-        case 'Open':
+
+      switch (ticket.status) {
+        case "Open":
           workload[assigneeName].open++;
           break;
-        case 'In Progress':
+        case "In Progress":
           workload[assigneeName].inProgress++;
           break;
-        case 'Resolved':
-        case 'Closed':
+        case "Resolved":
+        case "Closed":
           workload[assigneeName].closed++;
           break;
       }
     });
 
     // Calculate completion rates
-    Object.keys(workload).forEach(assigneeName => {
+    Object.keys(workload).forEach((assigneeName) => {
       const stats = workload[assigneeName];
-      stats.completionRate = stats.total > 0 ? 
-        Math.round((stats.closed / stats.total) * 100) : 0;
+      stats.completionRate =
+        stats.total > 0 ? Math.round((stats.closed / stats.total) * 100) : 0;
     });
 
     return workload;
@@ -733,27 +767,27 @@ class DataService {
    * Generate unique ticket number
    */
   async generateTicketNumber() {
-    const prefix = 'TKT';
+    const prefix = "TKT";
     const date = new Date();
     const year = date.getFullYear().toString().slice(-2);
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+
     // Get the last ticket number for today
     const existingNumbers = this.data.tickets
-      .map(t => t.ticket_number)
-      .filter(num => num && num.startsWith(`${prefix}${year}${month}`))
-      .map(num => parseInt(num.slice(-4)) || 0)
+      .map((t) => t.ticket_number)
+      .filter((num) => num && num.startsWith(`${prefix}${year}${month}`))
+      .map((num) => parseInt(num.slice(-4)) || 0)
       .sort((a, b) => b - a);
 
     const nextNumber = (existingNumbers[0] || 0) + 1;
-    return `${prefix}${year}${month}${nextNumber.toString().padStart(4, '0')}`;
+    return `${prefix}${year}${month}${nextNumber.toString().padStart(4, "0")}`;
   }
 
   /**
    * Check if ticket is overdue
    */
   isTicketOverdue(ticket) {
-    if (ticket.status === 'Resolved' || ticket.status === 'Closed') {
+    if (ticket.status === "Resolved" || ticket.status === "Closed") {
       return false;
     }
 
@@ -763,9 +797,9 @@ class DataService {
 
     // Define SLA hours based on priority
     const slaHours = {
-      'High': 4,
-      'Medium': 24,
-      'Low': 72
+      High: 4,
+      Medium: 24,
+      Low: 72,
     };
 
     const sla = slaHours[ticket.priority] || 24;
@@ -777,14 +811,15 @@ class DataService {
    */
   calculateTimeOpen(ticket) {
     const created = new Date(ticket.created_at);
-    const end = ticket.status === 'Resolved' || ticket.status === 'Closed' 
-      ? new Date(ticket.updated_at) 
-      : new Date();
-    
+    const end =
+      ticket.status === "Resolved" || ticket.status === "Closed"
+        ? new Date(ticket.updated_at)
+        : new Date();
+
     const diff = end - created;
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(hours / 24);
-    
+
     if (days > 0) {
       return `${days}d ${hours % 24}h`;
     } else {
@@ -796,7 +831,7 @@ class DataService {
    * Calculate priority score for sorting
    */
   calculatePriorityScore(ticket) {
-    const priorityScores = { 'High': 3, 'Medium': 2, 'Low': 1 };
+    const priorityScores = { High: 3, Medium: 2, Low: 1 };
     return priorityScores[ticket.priority] || 0;
   }
 
@@ -804,11 +839,11 @@ class DataService {
    * Calculate average resolution time
    */
   calculateAverageResolutionTime(tickets) {
-    const resolvedTickets = tickets.filter(t => 
-      t.status === 'Resolved' || t.status === 'Closed'
+    const resolvedTickets = tickets.filter(
+      (t) => t.status === "Resolved" || t.status === "Closed"
     );
 
-    if (resolvedTickets.length === 0) return '0h';
+    if (resolvedTickets.length === 0) return "0h";
 
     const totalHours = resolvedTickets.reduce((sum, ticket) => {
       const created = new Date(ticket.created_at);
@@ -819,7 +854,7 @@ class DataService {
 
     const avgHours = Math.round(totalHours / resolvedTickets.length);
     const days = Math.floor(avgHours / 24);
-    
+
     if (days > 0) {
       return `${days}d ${avgHours % 24}h`;
     } else {
@@ -831,25 +866,27 @@ class DataService {
    * Format date for display
    */
   formatDate(dateString) {
-    if (!dateString) return '';
-    
+    if (!dateString) return "";
+
     const date = new Date(dateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now - date) / 1000);
 
     // Return relative time for recent dates
-    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 60) return "Just now";
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    if (diffInSeconds < 86400)
+      return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 604800)
+      return `${Math.floor(diffInSeconds / 86400)}d ago`;
 
     // Return formatted date for older dates
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   }
 
@@ -862,16 +899,17 @@ class DataService {
     try {
       // Subscribe to ticket changes
       this.supabase
-        .channel('tickets_changes')
-        .on('postgres_changes', 
-          { event: '*', schema: 'public', table: 'tickets' },
+        .channel("tickets_changes")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "tickets" },
           (payload) => this.handleTicketChange(payload)
         )
         .subscribe();
 
-      console.log('🔔 Real-time subscriptions established');
+      console.log("🔔 Real-time subscriptions established");
     } catch (error) {
-      console.warn('⚠️ Could not establish real-time subscriptions:', error);
+      console.warn("⚠️ Could not establish real-time subscriptions:", error);
     }
   }
 
@@ -879,29 +917,33 @@ class DataService {
    * Handle real-time ticket changes
    */
   handleTicketChange(payload) {
-    console.log('🔔 Real-time update received:', payload.eventType);
-    
-    switch(payload.eventType) {
-      case 'INSERT':
+    console.log("🔔 Real-time update received:", payload.eventType);
+
+    switch (payload.eventType) {
+      case "INSERT":
         const newTicket = {
           ...payload.new,
-          assigned_to_name: this.getUserFullName(payload.new.assigned_to)
+          assigned_to_name: this.getUserFullName(payload.new.assigned_to),
         };
         this.data.tickets.unshift(newTicket);
         break;
-        
-      case 'UPDATE':
-        const updateIndex = this.data.tickets.findIndex(t => t.id === payload.new.id);
+
+      case "UPDATE":
+        const updateIndex = this.data.tickets.findIndex(
+          (t) => t.id === payload.new.id
+        );
         if (updateIndex !== -1) {
           this.data.tickets[updateIndex] = {
             ...payload.new,
-            assigned_to_name: this.getUserFullName(payload.new.assigned_to)
+            assigned_to_name: this.getUserFullName(payload.new.assigned_to),
           };
         }
         break;
-        
-      case 'DELETE':
-        this.data.tickets = this.data.tickets.filter(t => t.id !== payload.old.id);
+
+      case "DELETE":
+        this.data.tickets = this.data.tickets.filter(
+          (t) => t.id !== payload.old.id
+        );
         break;
     }
 
@@ -922,18 +964,20 @@ class DataService {
    * Unregister refresh callback
    */
   offRefresh(callback) {
-    this.refreshCallbacks = this.refreshCallbacks.filter(cb => cb !== callback);
+    this.refreshCallbacks = this.refreshCallbacks.filter(
+      (cb) => cb !== callback
+    );
   }
 
   /**
    * Notify all refresh callbacks
    */
   notifyRefreshCallbacks() {
-    this.refreshCallbacks.forEach(callback => {
+    this.refreshCallbacks.forEach((callback) => {
       try {
         callback(this.data);
       } catch (error) {
-        console.error('Error in refresh callback:', error);
+        console.error("Error in refresh callback:", error);
       }
     });
   }
@@ -946,29 +990,38 @@ class DataService {
   exportToCSV(tickets = null) {
     const data = tickets || this.data.tickets;
     const headers = [
-      'Ticket Number', 'Title', 'Description', 'Status', 'Priority',
-      'Submitter Name', 'Submitter Email', 'Assigned To', 'Base', 'Category',
-      'Created At', 'Updated At'
+      "Ticket Number",
+      "Title",
+      "Description",
+      "Status",
+      "Priority",
+      "Submitter Name",
+      "Submitter Email",
+      "Assigned To",
+      "Base",
+      "Category",
+      "Created At",
+      "Updated At",
     ];
 
-    const rows = data.map(ticket => [
-      ticket.ticket_number || '',
-      ticket.title || '',
-      ticket.description || '',
-      ticket.status || '',
-      ticket.priority || '',
-      ticket.submitter_name || '',
-      ticket.submitter_email || '',
-      ticket.assigned_to_name || '', // Use full name instead of ID
-      this.data.bases[ticket.base_id]?.name || '',
-      this.data.categories[ticket.category_id]?.name || '',
-      ticket.created_at || '',
-      ticket.updated_at || ''
+    const rows = data.map((ticket) => [
+      ticket.ticket_number || "",
+      ticket.title || "",
+      ticket.description || "",
+      ticket.status || "",
+      ticket.priority || "",
+      ticket.submitter_name || "",
+      ticket.submitter_email || "",
+      ticket.assigned_to_name || "", // Use full name instead of ID
+      this.data.bases[ticket.base_id]?.name || "",
+      this.data.categories[ticket.category_id]?.name || "",
+      ticket.created_at || "",
+      ticket.updated_at || "",
     ]);
 
     const csvContent = [headers, ...rows]
-      .map(row => row.map(field => `"${field}"`).join(','))
-      .join('\n');
+      .map((row) => row.map((field) => `"${field}"`).join(","))
+      .join("\n");
 
     return csvContent;
   }
@@ -984,7 +1037,7 @@ class DataService {
       baseCount: Object.keys(this.data.bases).length,
       categoryCount: Object.keys(this.data.categories).length,
       userCount: this.data.users.length,
-      hasStats: !!this.data.stats
+      hasStats: !!this.data.stats,
     };
   }
 }

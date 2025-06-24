@@ -1,61 +1,64 @@
 // Security check - runs immediately when script loads
-(function() {
-  'use strict';
-  
+(function () {
+  "use strict";
+
   // Function to check session validity
   function isValidSession() {
     try {
-      const session = sessionStorage.getItem('ticketing_session');
-      const signature = sessionStorage.getItem('session_signature');
-      
+      const session = sessionStorage.getItem("ticketing_session");
+      const signature = sessionStorage.getItem("session_signature");
+
       if (!session || !signature) {
         return false;
       }
-      
+
       const sessionData = JSON.parse(session);
-      
+
       // Check if session is expired
       if (!sessionData.expiration || sessionData.expiration <= Date.now()) {
         return false;
       }
-      
+
       // Check if session is properly verified
       if (!sessionData.verified || !sessionData.token) {
         return false;
       }
-      
+
       // Verify signature hasn't been tampered with
       try {
         const signatureData = JSON.parse(atob(signature));
-        if (!signatureData.token || !signatureData.timestamp || !signatureData.email) {
+        if (
+          !signatureData.token ||
+          !signatureData.timestamp ||
+          !signatureData.email
+        ) {
           return false;
         }
-        
+
         // Check if signature matches session
         if (signatureData.token !== sessionData.token) {
           return false;
         }
-        
+
         // Check if signature is not too old (max 1 hour)
         if (Date.now() - signatureData.timestamp > 60 * 60 * 1000) {
           return false;
         }
-        
       } catch (e) {
         return false;
       }
-      
+
       return true;
     } catch (error) {
       return false;
     }
   }
-  
+
   // Function to clear session and redirect
   function redirectToAuth() {
-    sessionStorage.removeItem('ticketing_session');
-    sessionStorage.removeItem('session_signature');
-    
+    sessionStorage.removeItem("ticketing_session");
+    sessionStorage.removeItem("session_signature");
+
     // Show a brief message before redirect
     document.body.innerHTML = `
       <div style="
@@ -83,32 +86,31 @@
         </div>
       </div>
     `;
-    
+
     setTimeout(() => {
-      window.location.href = '../index.html';
+      window.location.href = "../index.html";
     }, 2000);
   }
-  
+
   // Check session immediately
   if (!isValidSession()) {
     redirectToAuth();
     return; // Stop script execution
   }
-  
+
   // Set up periodic session checks
   setInterval(() => {
     if (!isValidSession()) {
       redirectToAuth();
     }
   }, 60000); // Check every minute
-  
+
   // Check when page becomes visible (user switches back to tab)
-  document.addEventListener('visibilitychange', () => {
+  document.addEventListener("visibilitychange", () => {
     if (!document.hidden && !isValidSession()) {
       redirectToAuth();
     }
   });
-  
 })();
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -120,29 +122,29 @@ document.addEventListener("DOMContentLoaded", () => {
   const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   // Get user email from session for pre-filling
-  let userEmail = '';
+  let userEmail = "";
   try {
-    const session = sessionStorage.getItem('ticketing_session');
+    const session = sessionStorage.getItem("ticketing_session");
     if (session) {
       const sessionData = JSON.parse(session);
-      userEmail = sessionData.email || '';
+      userEmail = sessionData.email || "";
     }
   } catch (error) {
-    console.warn('Could not retrieve user email from session');
+    console.warn("Could not retrieve user email from session");
   }
 
   // --- Element references ---
-  const trackTab = document.getElementById('track-tab');
-  const submitTab = document.getElementById('submit-tab');
-  const trackSection = document.getElementById('track-section');
-  const submitSection = document.getElementById('submit-section');
-  const trackForm = document.getElementById('track-form');
-  const submitForm = document.getElementById('submit-form');
-  const loader = document.getElementById('loader');
-  const resultContainer = document.getElementById('result');
-  const baseSelect = document.getElementById('ticket-base');
-  const categorySelect = document.getElementById('ticket-category');
-  const toastContainer = document.getElementById('toast-container');
+  const trackTab = document.getElementById("track-tab");
+  const submitTab = document.getElementById("submit-tab");
+  const trackSection = document.getElementById("track-section");
+  const submitSection = document.getElementById("submit-section");
+  const trackForm = document.getElementById("track-form");
+  const submitForm = document.getElementById("submit-form");
+  const loader = document.getElementById("loader");
+  const resultContainer = document.getElementById("result");
+  const baseSelect = document.getElementById("ticket-base");
+  const categorySelect = document.getElementById("ticket-category");
+  const toastContainer = document.getElementById("toast-container");
 
   // --- Data maps for lookups ---
   let basesMap = {};
@@ -151,26 +153,28 @@ document.addEventListener("DOMContentLoaded", () => {
   let teamsMap = {};
 
   // --- Utility Functions ---
-  
+
   /**
    * Generate a unique ticket ID with format TKT-YYYYMMDD-XXXX
    */
   function generateTicketNumber() {
     const now = new Date();
     const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const random = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const random = Math.floor(Math.random() * 9999)
+      .toString()
+      .padStart(4, "0");
     return `TKT-${year}${month}${day}-${random}`;
   }
 
   /**
    * Show toast notification
    */
-  function showToast(message, type = 'info', title = null) {
-    const toast = document.createElement('div');
+  function showToast(message, type = "info", title = null) {
+    const toast = document.createElement("div");
     toast.className = `toast ${type}`;
-    
+
     const iconMap = {
       success: `<svg class="toast-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -183,13 +187,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 </svg>`,
       info: `<svg class="toast-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-             </svg>`
+             </svg>`,
     };
 
     toast.innerHTML = `
       ${iconMap[type] || iconMap.info}
       <div class="toast-content">
-        ${title ? `<h4>${title}</h4>` : ''}
+        ${title ? `<h4>${title}</h4>` : ""}
         <p>${message}</p>
       </div>
     `;
@@ -199,7 +203,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Auto remove after 5 seconds
     setTimeout(() => {
       if (toast.parentNode) {
-        toast.style.animation = 'toastSlideOut 0.3s ease-in forwards';
+        toast.style.animation = "toastSlideOut 0.3s ease-in forwards";
         setTimeout(() => toast.remove(), 300);
       }
     }, 5000);
@@ -212,14 +216,14 @@ document.addEventListener("DOMContentLoaded", () => {
    */
   function getStatusBadge(status) {
     const statusMap = {
-      'Open': { class: 'info', icon: '📋' },
-      'In Progress': { class: 'warning', icon: '⚡' },
-      'Resolved': { class: 'success', icon: '✅' },
-      'Closed': { class: 'muted', icon: '🔒' },
-      'On Hold': { class: 'warning', icon: '⏸️' }
+      Open: { class: "info", icon: "📋" },
+      "In Progress": { class: "warning", icon: "⚡" },
+      Resolved: { class: "success", icon: "✅" },
+      Closed: { class: "muted", icon: "🔒" },
+      "On Hold": { class: "warning", icon: "⏸️" },
     };
-    
-    const config = statusMap[status] || { class: 'info', icon: '📋' };
+
+    const config = statusMap[status] || { class: "info", icon: "📋" };
     return `<span class="status-badge status-${config.class}">${config.icon} ${status}</span>`;
   }
 
@@ -228,12 +232,12 @@ document.addEventListener("DOMContentLoaded", () => {
    */
   function getPriorityBadge(priority) {
     const priorityMap = {
-      'Low': { class: 'low', icon: '🟢' },
-      'Medium': { class: 'medium', icon: '🟡' },
-      'High': { class: 'high', icon: '🔴' }
+      Low: { class: "low", icon: "🟢" },
+      Medium: { class: "medium", icon: "🟡" },
+      High: { class: "high", icon: "🔴" },
     };
-    
-    const config = priorityMap[priority] || { class: 'medium', icon: '🟡' };
+
+    const config = priorityMap[priority] || { class: "medium", icon: "🟡" };
     return `<span class="priority-badge priority-${config.class}">${config.icon} ${priority}</span>`;
   }
 
@@ -267,14 +271,14 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- Tab Management ---
   function activateTab(tabName) {
     // Update tab states
-    trackTab.classList.toggle('active', tabName === 'track');
-    submitTab.classList.toggle('active', tabName === 'submit');
-    trackTab.setAttribute('aria-selected', tabName === 'track');
-    submitTab.setAttribute('aria-selected', tabName === 'submit');
+    trackTab.classList.toggle("active", tabName === "track");
+    submitTab.classList.toggle("active", tabName === "submit");
+    trackTab.setAttribute("aria-selected", tabName === "track");
+    submitTab.setAttribute("aria-selected", tabName === "submit");
 
     // Update section visibility
-    trackSection.classList.toggle('active', tabName === 'track');
-    submitSection.classList.toggle('active', tabName === 'submit');
+    trackSection.classList.toggle("active", tabName === "track");
+    submitSection.classList.toggle("active", tabName === "submit");
 
     // Clear results and hide loader
     clearResults();
@@ -284,69 +288,80 @@ document.addEventListener("DOMContentLoaded", () => {
     window.location.hash = tabName;
 
     // Focus management for accessibility
-    const activeSection = tabName === 'track' ? trackSection : submitSection;
-    const firstInput = activeSection.querySelector('input, select, textarea');
+    const activeSection = tabName === "track" ? trackSection : submitSection;
+    const firstInput = activeSection.querySelector("input, select, textarea");
     if (firstInput) {
       setTimeout(() => firstInput.focus(), 100);
     }
   }
 
   // Tab event listeners
-  trackTab.addEventListener('click', () => activateTab('track'));
-  submitTab.addEventListener('click', () => activateTab('submit'));
+  trackTab.addEventListener("click", () => activateTab("track"));
+  submitTab.addEventListener("click", () => activateTab("submit"));
 
   // Handle deep linking
   function handleInitialTab() {
     const hash = window.location.hash.slice(1);
-    if (hash === 'submit') {
-      activateTab('submit');
+    if (hash === "submit") {
+      activateTab("submit");
     } else {
-      activateTab('track');
+      activateTab("track");
     }
   }
 
   // --- Loader Management ---
   function showLoader() {
-    loader.classList.remove('hidden');
-    loader.setAttribute('aria-hidden', 'false');
+    loader.classList.remove("hidden");
+    loader.setAttribute("aria-hidden", "false");
   }
 
   function hideLoader() {
-    loader.classList.add('hidden');
-    loader.setAttribute('aria-hidden', 'true');
+    loader.classList.add("hidden");
+    loader.setAttribute("aria-hidden", "true");
   }
 
   function clearResults() {
-    resultContainer.innerHTML = '';
+    resultContainer.innerHTML = "";
   }
 
   // --- Data Loading ---
   async function loadLookupData() {
     try {
-      showToast('Loading system data...', 'info');
+      showToast("Loading system data...", "info");
 
       const [
         { data: bases, error: basesError },
         { data: categories, error: categoriesError },
         { data: departments, error: departmentsError },
-        { data: teams, error: teamsError }
+        { data: teams, error: teamsError },
       ] = await Promise.all([
-        supabaseClient.from('bases').select('id, name').order('name'),
-        supabaseClient.from('ticket_cats').select('id, name').order('name'),
-        supabaseClient.from('departments').select('id, name').order('name'),
-        supabaseClient.from('teams').select('id, name, department_id').order('name')
+        supabaseClient.from("bases").select("id, name").order("name"),
+        supabaseClient.from("ticket_cats").select("id, name").order("name"),
+        supabaseClient.from("departments").select("id, name").order("name"),
+        supabaseClient
+          .from("teams")
+          .select("id, name, department_id")
+          .order("name"),
       ]);
 
-      if (basesError) throw new Error(`Failed to load bases: ${basesError.message}`);
-      if (categoriesError) throw new Error(`Failed to load categories: ${categoriesError.message}`);
-      if (departmentsError) throw new Error(`Failed to load departments: ${departmentsError.message}`);
-      if (teamsError) throw new Error(`Failed to load teams: ${teamsError.message}`);
+      if (basesError)
+        throw new Error(`Failed to load bases: ${basesError.message}`);
+      if (categoriesError)
+        throw new Error(
+          `Failed to load categories: ${categoriesError.message}`
+        );
+      if (departmentsError)
+        throw new Error(
+          `Failed to load departments: ${departmentsError.message}`
+        );
+      if (teamsError)
+        throw new Error(`Failed to load teams: ${teamsError.message}`);
 
       // Populate bases
       if (bases) {
-        bases.forEach(base => {
+        bases.forEach((base) => {
           basesMap[base.id] = base.name;
-          const option = document.createElement('option');
+          const option = document.createElement("option");
           option.value = base.id;
           option.textContent = base.name;
           baseSelect.appendChild(option);
@@ -355,9 +370,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Populate categories
       if (categories) {
-        categories.forEach(category => {
+        categories.forEach((category) => {
           categoriesMap[category.id] = category.name;
-          const option = document.createElement('option');
+          const option = document.createElement("option");
           option.value = category.id;
           option.textContent = category.name;
           categorySelect.appendChild(option);
@@ -366,79 +381,82 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Store departments and teams for future use
       if (departments) {
-        departments.forEach(dept => {
+        departments.forEach((dept) => {
           departmentsMap[dept.id] = dept.name;
         });
       }
 
       if (teams) {
-        teams.forEach(team => {
-          teamsMap[team.id] = { name: team.name, department_id: team.department_id };
+        teams.forEach((team) => {
+          teamsMap[team.id] = {
+            name: team.name,
+            department_id: team.department_id,
+          };
         });
       }
 
-      showToast('System data loaded successfully!', 'success');
-
+      showToast("System data loaded successfully!", "success");
     } catch (error) {
-      console.error('Error loading lookup data:', error);
-      showToast(`Error loading system data: ${error.message}`, 'error');
+      console.error("Error loading lookup data:", error);
+      showToast(`Error loading system data: ${error.message}`, "error");
     }
   }
 
   // --- Ticket Tracking ---
   async function handleTicketTracking(e) {
     e.preventDefault();
-    
-    const ticketIdInput = document.getElementById('ticket-id');
+
+    const ticketIdInput = document.getElementById("ticket-id");
     const ticketInput = ticketIdInput.value.trim();
-    
+
     if (!ticketInput) {
-      showToast('Please enter a ticket ID', 'warning');
+      showToast("Please enter a ticket ID", "warning");
       ticketIdInput.focus();
       return;
     }
 
-    const searchBtn = trackForm.querySelector('.search-btn');
+    const searchBtn = trackForm.querySelector(".search-btn");
     setButtonLoading(searchBtn, true);
     showLoader();
     clearResults();
 
     try {
       // Search by ticket_number (human-readable) or id (UUID)
-      let query = supabaseClient
-        .from('tickets')
-        .select(`
+      let query = supabaseClient.from("tickets").select(`
           id, ticket_number, title, description, status, priority, created_at, updated_at,
           submitter_name, submitter_email, base_id, category_id, assigned_to
         `);
-      
+
       // Check if input looks like a UUID or ticket number
-      if (ticketInput.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-        query = query.eq('id', ticketInput);
+      if (
+        ticketInput.match(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+        )
+      ) {
+        query = query.eq("id", ticketInput);
       } else {
-        query = query.eq('ticket_number', ticketInput.toUpperCase());
+        query = query.eq("ticket_number", ticketInput.toUpperCase());
       }
-      
+
       const { data: ticket, error } = await query.single();
 
       if (error || !ticket) {
-        throw new Error('Ticket not found or access denied');
+        throw new Error("Ticket not found or access denied");
       }
 
       // Get additional ticket logs
       const { data: logs } = await supabaseClient
-        .from('simple_ticket_log')
-        .select('*')
-        .eq('ticket_id', ticket.id)
-        .order('created_at', { ascending: false })
+        .from("simple_ticket_log")
+        .select("*")
+        .eq("ticket_id", ticket.id)
+        .order("created_at", { ascending: false })
         .limit(5);
 
       displayTicketDetails(ticket, logs);
-      showToast('Ticket found successfully!', 'success');
-
+      showToast("Ticket found successfully!", "success");
     } catch (error) {
-      console.error('Error tracking ticket:', error);
-      
+      console.error("Error tracking ticket:", error);
+
       resultContainer.innerHTML = `
         <div class="result-card">
           <div class="error-state">
@@ -453,8 +471,8 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         </div>
       `;
-      
-      showToast('Ticket not found', 'error');
+
+      showToast("Ticket not found", "error");
     } finally {
       setButtonLoading(searchBtn, false);
       hideLoader();
@@ -462,16 +480,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function displayTicketDetails(ticket, logs = []) {
-    const baseName = basesMap[ticket.base_id] || 'Unknown Base';
-    const categoryName = categoriesMap[ticket.category_id] || 'Unknown Category';
-    
-    const assignedTo = ticket.assigned_to 
-      ? 'Assigned to support team'
-      : 'Unassigned';
+    const baseName = basesMap[ticket.base_id] || "Unknown Base";
+    const categoryName =
+      categoriesMap[ticket.category_id] || "Unknown Category";
+
+    const assignedTo = ticket.assigned_to
+      ? "Assigned to support team"
+      : "Unassigned";
 
     const createdDate = new Date(ticket.created_at);
     const updatedDate = new Date(ticket.updated_at);
-    
+
     resultContainer.innerHTML = `
       <div class="result-card">
         <div class="ticket-header">
@@ -508,7 +527,9 @@ document.addEventListener("DOMContentLoaded", () => {
             
             <div class="detail-item">
               <label>Submitted By</label>
-              <p>${ticket.submitter_name}<br><small>${ticket.submitter_email}</small></p>
+              <p>${ticket.submitter_name}<br><small>${
+      ticket.submitter_email
+    }</small></p>
             </div>
             
             <div class="detail-item">
@@ -527,21 +548,31 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
           </div>
           
-          ${logs && logs.length > 0 ? `
+          ${
+            logs && logs.length > 0
+              ? `
             <div class="ticket-logs">
               <h4>Recent Activity</h4>
               <div class="logs-list">
-                ${logs.map(log => `
+                ${logs
+                  .map(
+                    (log) => `
                   <div class="log-item">
                     <div class="log-content">
-                      <p>${log.action || 'Status updated'}</p>
-                      <small>${new Date(log.created_at).toLocaleString()}</small>
+                      <p>${log.action || "Status updated"}</p>
+                      <small>${new Date(
+                        log.created_at
+                      ).toLocaleString()}</small>
                     </div>
                   </div>
-                `).join('')}
+                `
+                  )
+                  .join("")}
               </div>
             </div>
-          ` : ''}
+          `
+              : ""
+          }
         </div>
       </div>
     `;
@@ -550,26 +581,26 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- Ticket Submission ---
   async function handleTicketSubmission(e) {
     e.preventDefault();
-    
+
     // Get form values
     const formData = {
-      name: document.getElementById('submitter-name').value.trim(),
-      email: document.getElementById('submitter-email').value.trim(),
+      name: document.getElementById("submitter-name").value.trim(),
+      email: document.getElementById("submitter-email").value.trim(),
       base_id: baseSelect.value,
       category_id: categorySelect.value,
-      title: document.getElementById('ticket-title').value.trim(),
-      description: document.getElementById('ticket-desc').value.trim(),
-      priority: document.querySelector('input[name="priority"]:checked')?.value
+      title: document.getElementById("ticket-title").value.trim(),
+      description: document.getElementById("ticket-desc").value.trim(),
+      priority: document.querySelector('input[name="priority"]:checked')?.value,
     };
 
     // Validation
     const validationErrors = validateTicketForm(formData);
     if (validationErrors.length > 0) {
-      showToast(validationErrors[0], 'warning');
+      showToast(validationErrors[0], "warning");
       return;
     }
 
-    const submitBtn = submitForm.querySelector('.submit-btn');
+    const submitBtn = submitForm.querySelector(".submit-btn");
     setButtonLoading(submitBtn, true);
     showLoader();
     clearResults();
@@ -577,44 +608,45 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       // Generate unique ticket number for display
       const ticketNumber = generateTicketNumber();
-      
+
       // Create ticket (let Supabase generate UUID for id)
       const { data: ticket, error: ticketError } = await supabaseClient
-        .from('tickets')
-        .insert([{
-          ticket_number: ticketNumber,  // Human-readable ticket number
-          submitter_name: formData.name,
-          submitter_email: formData.email,
-          base_id: formData.base_id,
-          category_id: formData.category_id,
-          title: formData.title,
-          description: formData.description,
-          priority: formData.priority,
-          status: 'Open',
-          assigned_to: null
-          // Remove created_by - let it use the default value
-        }])
-        .select('id, ticket_number')
+        .from("tickets")
+        .insert([
+          {
+            ticket_number: ticketNumber, // Human-readable ticket number
+            submitter_name: formData.name,
+            submitter_email: formData.email,
+            base_id: formData.base_id,
+            category_id: formData.category_id,
+            title: formData.title,
+            description: formData.description,
+            priority: formData.priority,
+            status: "Open",
+            assigned_to: null,
+            // Remove created_by - let it use the default value
+          },
+        ])
+        .select("id, ticket_number")
         .single();
 
       if (ticketError) throw ticketError;
 
       // Display success result (remove manual logging since triggers handle it)
       displaySubmissionSuccess(ticket.ticket_number, ticket.id, formData);
-      
+
       // Reset form
       submitForm.reset();
-      
+
       // Clear priority selection
-      document.querySelectorAll('input[name="priority"]').forEach(radio => {
+      document.querySelectorAll('input[name="priority"]').forEach((radio) => {
         radio.checked = false;
       });
 
-      showToast('Ticket submitted successfully!', 'success', 'Success');
-
+      showToast("Ticket submitted successfully!", "success", "Success");
     } catch (error) {
-      console.error('Error submitting ticket:', error);
-      
+      console.error("Error submitting ticket:", error);
+
       resultContainer.innerHTML = `
         <div class="result-card">
           <div class="error-state">
@@ -629,8 +661,8 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         </div>
       `;
-      
-      showToast('Failed to submit ticket. Please try again.', 'error');
+
+      showToast("Failed to submit ticket. Please try again.", "error");
     } finally {
       setButtonLoading(submitBtn, false);
       hideLoader();
@@ -639,23 +671,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function validateTicketForm(formData) {
     const errors = [];
-    
-    if (!formData.name) errors.push('Please enter your full name');
-    if (!formData.email) errors.push('Please enter your email address');
-    else if (!isValidEmail(formData.email)) errors.push('Please enter a valid email address');
-    if (!formData.base_id) errors.push('Please select your base/location');
-    if (!formData.category_id) errors.push('Please select an issue category');
-    if (!formData.title) errors.push('Please enter an issue title');
-    if (!formData.description) errors.push('Please provide a detailed description');
-    if (!formData.priority) errors.push('Please select a priority level');
-    
+
+    if (!formData.name) errors.push("Please enter your full name");
+    if (!formData.email) errors.push("Please enter your email address");
+    else if (!isValidEmail(formData.email))
+      errors.push("Please enter a valid email address");
+    if (!formData.base_id) errors.push("Please select your base/location");
+    if (!formData.category_id) errors.push("Please select an issue category");
+    if (!formData.title) errors.push("Please enter an issue title");
+    if (!formData.description)
+      errors.push("Please provide a detailed description");
+    if (!formData.priority) errors.push("Please select a priority level");
+
     return errors;
   }
 
   function displaySubmissionSuccess(ticketNumber, ticketId, formData) {
-    const baseName = basesMap[formData.base_id] || 'Unknown';
-    const categoryName = categoriesMap[formData.category_id] || 'Unknown';
-    
+    const baseName = basesMap[formData.base_id] || "Unknown";
+    const categoryName = categoriesMap[formData.category_id] || "Unknown";
+
     resultContainer.innerHTML = `
       <div class="result-card">
         <div class="success-state">
@@ -679,7 +713,9 @@ document.addEventListener("DOMContentLoaded", () => {
             <h4>Ticket Summary</h4>
             <div class="summary-grid">
               <div><strong>Title:</strong> ${formData.title}</div>
-              <div><strong>Priority:</strong> ${getPriorityBadge(formData.priority)}</div>
+              <div><strong>Priority:</strong> ${getPriorityBadge(
+                formData.priority
+              )}</div>
               <div><strong>Base:</strong> ${baseName}</div>
               <div><strong>Category:</strong> ${categoryName}</div>
             </div>
@@ -700,56 +736,61 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- Event Listeners ---
-  trackForm.addEventListener('submit', handleTicketTracking);
-  submitForm.addEventListener('submit', handleTicketSubmission);
+  trackForm.addEventListener("submit", handleTicketTracking);
+  submitForm.addEventListener("submit", handleTicketSubmission);
 
   // Form enhancements
-  document.getElementById('ticket-id').addEventListener('input', (e) => {
+  document.getElementById("ticket-id").addEventListener("input", (e) => {
     // Auto-format ticket ID input
-    let value = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+    let value = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, "");
     e.target.value = value;
   });
 
   // Real-time form validation
-  const requiredFields = ['submitter-name', 'submitter-email', 'ticket-title', 'ticket-desc'];
-  requiredFields.forEach(fieldId => {
+  const requiredFields = [
+    "submitter-name",
+    "submitter-email",
+    "ticket-title",
+    "ticket-desc",
+  ];
+  requiredFields.forEach((fieldId) => {
     const field = document.getElementById(fieldId);
     if (field) {
-      field.addEventListener('blur', (e) => {
-        const isValid = e.target.value.trim() !== '';
-        e.target.classList.toggle('error', !isValid);
+      field.addEventListener("blur", (e) => {
+        const isValid = e.target.value.trim() !== "";
+        e.target.classList.toggle("error", !isValid);
       });
     }
   });
 
   // Email validation
-  document.getElementById('submitter-email').addEventListener('blur', (e) => {
+  document.getElementById("submitter-email").addEventListener("blur", (e) => {
     const email = e.target.value.trim();
-    const isValid = email === '' || isValidEmail(email);
-    e.target.classList.toggle('error', !isValid);
+    const isValid = email === "" || isValidEmail(email);
+    e.target.classList.toggle("error", !isValid);
   });
 
   // Priority selection visual feedback
-  document.querySelectorAll('input[name="priority"]').forEach(radio => {
-    radio.addEventListener('change', () => {
-      document.querySelectorAll('.priority-option').forEach(option => {
-        option.classList.remove('selected');
+  document.querySelectorAll('input[name="priority"]').forEach((radio) => {
+    radio.addEventListener("change", () => {
+      document.querySelectorAll(".priority-option").forEach((option) => {
+        option.classList.remove("selected");
       });
-      radio.closest('.priority-option').classList.add('selected');
+      radio.closest(".priority-option").classList.add("selected");
     });
   });
 
   // Keyboard shortcuts
-  document.addEventListener('keydown', (e) => {
+  document.addEventListener("keydown", (e) => {
     if (e.altKey) {
-      switch(e.key) {
-        case '1':
+      switch (e.key) {
+        case "1":
           e.preventDefault();
-          activateTab('track');
+          activateTab("track");
           break;
-        case '2':
+        case "2":
           e.preventDefault();
-          activateTab('submit');
+          activateTab("submit");
           break;
       }
     }
@@ -760,26 +801,30 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       await loadLookupData();
       handleInitialTab();
-      
+
       // Pre-fill email field if available from session
       if (userEmail) {
-        const emailField = document.getElementById('submitter-email');
+        const emailField = document.getElementById("submitter-email");
         if (emailField) {
           emailField.value = userEmail;
         }
       }
-      
+
       // Add some accessibility enhancements
-      document.body.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
+      document.body.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
           // Close any open toasts
-          document.querySelectorAll('.toast').forEach(toast => toast.remove());
+          document
+            .querySelectorAll(".toast")
+            .forEach((toast) => toast.remove());
         }
       });
-      
     } catch (error) {
-      console.error('Failed to initialize app:', error);
-      showToast('Failed to initialize application. Please refresh the page.', 'error');
+      console.error("Failed to initialize app:", error);
+      showToast(
+        "Failed to initialize application. Please refresh the page.",
+        "error"
+      );
     }
   }
 
