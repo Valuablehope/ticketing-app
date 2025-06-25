@@ -23,6 +23,185 @@
   <!-- Page-specific styles -->
   <link rel="stylesheet" href="css/pages/ticket-submission.css">
   
+  <!-- Additional styles for screenshot upload -->
+  <style>
+    /* Screenshot Upload Specific Styles */
+    .file-upload-limit {
+      font-size: var(--font-size-xs);
+      color: var(--text-lighter);
+      margin-top: 0.25rem;
+    }
+
+    .screenshot-preview {
+      margin-top: 1rem;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      background: var(--surface-hover);
+    }
+
+    .screenshot-preview.hidden {
+      display: none;
+    }
+
+    .preview-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .preview-title {
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .remove-btn {
+      background: none;
+      border: none;
+      color: var(--error);
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: var(--radius-sm);
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .remove-btn:hover {
+      background: var(--error-light);
+    }
+
+    .remove-btn svg {
+      width: 16px;
+      height: 16px;
+      stroke-width: 2;
+    }
+
+    .preview-content {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .preview-image {
+      max-width: 120px;
+      max-height: 80px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      object-fit: cover;
+    }
+
+    .preview-info {
+      flex: 1;
+    }
+
+    .file-name {
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 0.25rem;
+      word-break: break-word;
+    }
+
+    .file-size {
+      font-size: var(--font-size-xs);
+      color: var(--text-light);
+    }
+
+    .file-upload-area.error {
+      border-color: var(--error);
+      background: var(--error-light);
+      color: var(--error);
+    }
+
+    .file-upload-area.uploading {
+      pointer-events: none;
+    }
+
+    .file-upload-area.uploading .file-upload-icon {
+      animation: spin 1s linear infinite;
+    }
+
+    /* Ticket screenshot display styles */
+    .screenshot-display {
+      margin-top: 0.5rem;
+    }
+
+    .ticket-screenshot {
+      max-width: 300px;
+      max-height: 200px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: var(--transition);
+      object-fit: cover;
+    }
+
+    .ticket-screenshot:hover {
+      box-shadow: var(--shadow-lg);
+      transform: scale(1.02);
+    }
+
+    .screenshot-hint {
+      font-size: var(--font-size-xs);
+      color: var(--text-light);
+      margin-top: 0.5rem;
+      font-style: italic;
+    }
+
+    .detail-item.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .copy-btn {
+      background: none;
+      border: none;
+      color: var(--accent);
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: var(--radius-sm);
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      margin-left: 0.5rem;
+    }
+
+    .copy-btn:hover {
+      background: rgba(79, 70, 229, 0.1);
+    }
+
+    .copy-btn svg {
+      width: 16px;
+      height: 16px;
+      stroke-width: 2;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 480px) {
+      .preview-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+      }
+      
+      .preview-image {
+        max-width: 100%;
+        max-height: 120px;
+      }
+      
+      .ticket-screenshot {
+        max-width: 100%;
+        max-height: 150px;
+      }
+    }
+  </style>
+  
   <!-- Security Check Script - Must load first -->
   <script>
     // Immediate security check before page loads
@@ -347,68 +526,55 @@
               </div>
             </div>
 
-            <!-- <div class="form-group">
-              <label for="ticket-urgency" class="form-label">Business Impact</label>
-              <div class="select-wrapper">
-                <select id="ticket-urgency" class="form-control">
-                  <option value="" selected>Select business impact (optional)</option>
-                  <option value="Individual">Affects only me</option>
-                  <option value="Team">Affects my team (2-10 people)</option>
-                  <option value="Department">Affects my department (10+ people)</option>
-                  <option value="Organization">Affects entire organization</option>
-                </select>
-                <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M6 9l6 6 6-6"/>
-                </svg>
-              </div>
-            </div>
-          </div> -->
-
-          <!-- Additional Information -->
-          <!-- <div class="form-section">
-            <h3 class="form-section-title">
-              <svg class="form-section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 6v6l4 2"/>
-              </svg>
-              Additional Information
-            </h3> -->
-            
-            <!-- <div class="form-group">
-              <label for="ticket-environment" class="form-label">Environment/System Affected</label>
-              <input 
-                type="text" 
-                id="ticket-environment" 
-                class="form-control" 
-                placeholder="e.g., Windows 10, Chrome browser, SAP system, etc." 
-              />
-            </div>
-
             <div class="form-group">
-              <label class="form-label">Preferred Contact Method</label>
-              <div class="contact-options">
-                <label class="contact-option">
-                  <input type="radio" name="contact_method" value="email" checked>
-                  <span class="contact-indicator">
+              <label for="screenshot-upload" class="form-label">
+                Screenshot (Optional)
+              </label>
+              <div class="file-upload-wrapper">
+                <input 
+                  type="file" 
+                  id="screenshot-upload" 
+                  class="file-upload-input"
+                  accept="image/*"
+                  aria-describedby="screenshot-help"
+                />
+                <div class="file-upload-area" id="upload-area">
+                  <svg class="file-upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+                    <circle cx="12" cy="13" r="3"/>
+                  </svg>
+                  <div class="file-upload-text">Click to upload screenshot</div>
+                  <div class="file-upload-hint">or drag and drop image file here</div>
+                  <div class="file-upload-limit">PNG, JPG, GIF up to 5MB</div>
+                </div>
+              </div>
+              <div id="screenshot-help" class="form-help">
+                <svg class="form-help-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M12 6v6l4 2"/>
+                </svg>
+                Attach a screenshot to help us understand your issue better
+              </div>
+              <div id="screenshot-preview" class="screenshot-preview hidden">
+                <div class="preview-header">
+                  <span class="preview-title">Selected Image:</span>
+                  <button type="button" id="remove-screenshot" class="remove-btn" aria-label="Remove screenshot">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                      <polyline points="22,6 12,13 2,6"/>
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
                     </svg>
-                  </span>
-                  <span>Email</span>
-                </label>
-                <label class="contact-option">
-                  <input type="radio" name="contact_method" value="phone">
-                  <span class="contact-indicator">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-                    </svg>
-                  </span>
-                  <span>Phone</span>
-                </label>
+                  </button>
+                </div>
+                <div class="preview-content">
+                  <img id="preview-image" class="preview-image" alt="Screenshot preview" />
+                  <div class="preview-info">
+                    <div id="file-name" class="file-name"></div>
+                    <div id="file-size" class="file-size"></div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div> -->
+          </div>
 
           <!-- Form Actions -->
           <div class="form-actions">
@@ -477,7 +643,7 @@
           }
         }
       } catch (error) {
-        
+        console.error('Error loading session:', error);
       }
 
       // Logout functionality
@@ -522,26 +688,157 @@
         resetBtn.addEventListener('click', function() {
           if (confirm('Are you sure you want to reset the form? All entered data will be lost.')) {
             submitForm.reset();
+            // Clear screenshot preview
+            const preview = document.getElementById('screenshot-preview');
+            const uploadArea = document.getElementById('upload-area');
+            if (preview) preview.classList.add('hidden');
+            if (uploadArea) {
+              uploadArea.classList.remove('error');
+              uploadArea.querySelector('.file-upload-text').textContent = 'Click to upload screenshot';
+              uploadArea.querySelector('.file-upload-hint').textContent = 'or drag and drop image file here';
+            }
           }
         });
       }
 
-      // Quick actions functionality
-      const quickActionBtns = document.querySelectorAll('.quick-action-btn');
-      quickActionBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-          const action = this.dataset.action;
-          // Add your quick action logic here
+      // Screenshot upload functionality
+      const fileInput = document.getElementById('screenshot-upload');
+      const uploadArea = document.getElementById('upload-area');
+      const previewContainer = document.getElementById('screenshot-preview');
+      const previewImage = document.getElementById('preview-image');
+      const fileName = document.getElementById('file-name');
+      const fileSize = document.getElementById('file-size');
+      const removeBtn = document.getElementById('remove-screenshot');
+
+      let selectedFile = null;
+
+      // File validation
+      function validateFile(file) {
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
+        
+        if (!allowedTypes.includes(file.type)) {
+          return 'Please select a valid image file (PNG, JPG, GIF)';
+        }
+        
+        if (file.size > maxSize) {
+          return 'File size must be less than 5MB';
+        }
+        
+        return null;
+      }
+
+      // Format file size
+      function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+      }
+
+      // Handle file selection
+      function handleFileSelect(file) {
+        const error = validateFile(file);
+        
+        if (error) {
+          uploadArea.classList.add('error');
+          uploadArea.querySelector('.file-upload-text').textContent = error;
+          uploadArea.querySelector('.file-upload-hint').textContent = 'Please try again with a different file';
+          return;
+        }
+
+        uploadArea.classList.remove('error');
+        selectedFile = file;
+        
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          previewImage.src = e.target.result;
+          fileName.textContent = file.name;
+          fileSize.textContent = formatFileSize(file.size);
+          previewContainer.classList.remove('hidden');
           
+          // Update upload area
+          uploadArea.querySelector('.file-upload-text').textContent = 'Screenshot selected';
+          uploadArea.querySelector('.file-upload-hint').textContent = 'Click to change or drag a different file';
+        };
+        reader.readAsDataURL(file);
+      }
+
+      // File input change event
+      if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+          const file = e.target.files[0];
+          if (file) {
+            handleFileSelect(file);
+          }
         });
-      });
+      }
+
+      // Drag and drop functionality
+      if (uploadArea) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+          uploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+          uploadArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+          uploadArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight(e) {
+          uploadArea.classList.add('dragover');
+        }
+
+        function unhighlight(e) {
+          uploadArea.classList.remove('dragover');
+        }
+
+        uploadArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+          const dt = e.dataTransfer;
+          const files = dt.files;
+          
+          if (files.length > 0) {
+            const file = files[0];
+            fileInput.files = files; // Update the input
+            handleFileSelect(file);
+          }
+        }
+
+        // Click to upload
+        uploadArea.addEventListener('click', function() {
+          fileInput.click();
+        });
+      }
+
+      // Remove screenshot
+      if (removeBtn) {
+        removeBtn.addEventListener('click', function() {
+          selectedFile = null;
+          fileInput.value = '';
+          previewContainer.classList.add('hidden');
+          uploadArea.classList.remove('error');
+          uploadArea.querySelector('.file-upload-text').textContent = 'Click to upload screenshot';
+          uploadArea.querySelector('.file-upload-hint').textContent = 'or drag and drop image file here';
+        });
+      }
 
       // Help link functionality
       const helpLink = document.getElementById('help-link');
       if (helpLink) {
         helpLink.addEventListener('click', function(e) {
           e.preventDefault();
-          // Add help modal or redirect logic here
           alert('Help documentation will be available soon!');
         });
       }

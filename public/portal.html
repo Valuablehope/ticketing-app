@@ -35,6 +35,108 @@
     .section-actions{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
     .analytics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:2rem}
     .coming-soon{text-align:center;padding:4rem 2rem;font-size:1.125rem;color:var(--text-muted)}
+
+    /* Screenshot Display Styles */
+    .screenshot-section {
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border-light);
+    }
+
+    .screenshot-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .screenshot-image {
+      max-width: 100%;
+      max-height: 400px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: var(--transition);
+      object-fit: contain;
+      background: var(--surface-hover);
+    }
+
+    .screenshot-image:hover {
+      box-shadow: var(--shadow-lg);
+      transform: scale(1.02);
+    }
+
+    .screenshot-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: var(--font-size-sm);
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+    }
+
+    .screenshot-filename {
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .screenshot-size {
+      color: var(--text-light);
+    }
+
+    .screenshot-hint {
+      font-style: italic;
+      color: var(--text-light);
+      font-size: var(--font-size-xs);
+      text-align: center;
+      margin-top: 0.5rem;
+    }
+
+    /* Full-screen screenshot modal */
+    .screenshot-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.9);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      cursor: pointer;
+    }
+
+    .screenshot-modal img {
+      max-width: 95vw;
+      max-height: 95vh;
+      object-fit: contain;
+      border-radius: var(--radius-sm);
+    }
+
+    .screenshot-modal-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      padding: 0.75rem;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: var(--transition);
+      backdrop-filter: blur(4px);
+    }
+
+    .screenshot-modal-close:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .screenshot-modal-close svg {
+      width: 20px;
+      height: 20px;
+      stroke-width: 2;
+    }
+
     @media(max-width:768px){
       .section-header{flex-direction:column;align-items:stretch}
       .section-actions{flex-direction:column;align-items:stretch}
@@ -45,6 +147,7 @@
       .modal{padding:1rem}
       .modal-content{margin:0;max-width:100%;max-height:100%;width:100%;height:100%;border-radius:0}
       .modal-body{max-height:calc(100vh - 120px)}
+      .screenshot-image{max-height:200px}
     }
   </style>
 </head>
@@ -131,13 +234,6 @@
                 </svg>Create User
               </a>
             </li>
-            <!-- <li class="nav-item">
-              <a href="public/ticket-submission.html" class="nav-link external-link">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M12 2v20M2 12h20"/>
-                </svg>Submit Ticket
-              </a>
-            </li> -->
           </ul>
         </div>
       </nav>
@@ -472,7 +568,18 @@
   <!-- Toast Container -->
   <div id="toast-container" class="toast-container"></div>
 
-  <!-- Modals -->
+  <!-- Screenshot Full-Screen Modal -->
+  <div id="screenshot-modal" class="screenshot-modal">
+    <button class="screenshot-modal-close" onclick="closeScreenshotModal()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+    <img id="screenshot-modal-image" src="" alt="Full-size screenshot" />
+  </div>
+
+  <!-- Ticket Modal (Enhanced with Screenshot Support) -->
   <div id="ticket-modal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
@@ -557,13 +664,31 @@
       anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrZGJsYm5tdHp5cmFwZmVtc3dxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1ODQyNTgsImV4cCI6MjA2NjE2MDI1OH0.TY7Ml-S-knKMNQ-HKylGLbpXIu9wHqGAZDHHAq4rRJc'
     };
 
-    // === MODAL MANAGEMENT SYSTEM (FIXED) ===
+    // === SCREENSHOT MODAL FUNCTIONS ===
+    function showScreenshotModal(imageUrl) {
+      const modal = document.getElementById('screenshot-modal');
+      const modalImage = document.getElementById('screenshot-modal-image');
+      
+      if (modal && modalImage && imageUrl) {
+        modalImage.src = imageUrl;
+        modal.style.display = 'flex';
+      }
+    }
+
+    function closeScreenshotModal() {
+      const modal = document.getElementById('screenshot-modal');
+      if (modal) {
+        modal.style.display = 'none';
+      }
+    }
+
+    // === ENHANCED MODAL MANAGEMENT SYSTEM WITH SCREENSHOT SUPPORT ===
     (function() {
       'use strict';
       
       // Prevent multiple initializations
       if (window.modalSystemInitialized) {
-        
+        console.log('Modal system already initialized');
         return;
       }
       window.modalSystemInitialized = true;
@@ -575,11 +700,36 @@
         blockedCalls: []
       };
 
-      // === CORE MODAL FUNCTIONS ===
+      // === UTILITY FUNCTIONS ===
+      function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+      }
+
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      function sanitizeClass(text) {
+        return text ? text.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') : '';
+      }
+
+      function formatDateTime(dateString) {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+
+      // === ENHANCED MODAL FUNCTIONS WITH SCREENSHOT SUPPORT ===
 
       function showTicketModal(ticket, lookupData) {
         if (!ticket) {
-          
+          console.error('No ticket provided to showTicketModal');
           return;
         }
 
@@ -590,7 +740,7 @@
         const modalBody = document.getElementById('modal-body');
 
         if (!modal || !modalTitle || !modalBody) {
-          
+          console.error('Modal elements not found');
           return;
         }
 
@@ -604,6 +754,33 @@
         const baseName = data.bases?.[ticket.base_id] || 'Unknown';
         const categoryName = data.categories?.[ticket.category_id] || 'Unknown';
         const assignedToName = ticket.assigned_to_name || 'Unassigned';
+
+        // Build screenshot section HTML
+        let screenshotSection = '';
+        if (ticket.screenshot_url) {
+          screenshotSection = `
+            <div class="screenshot-section">
+              <h4>Screenshot</h4>
+              <div class="screenshot-container">
+                <img src="${ticket.screenshot_url}" 
+                     alt="Ticket screenshot" 
+                     class="screenshot-image" 
+                     onclick="showScreenshotModal('${ticket.screenshot_url}')" 
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+                <div style="display:none; padding: 1rem; text-align: center; color: var(--text-muted); border: 2px dashed var(--border); border-radius: var(--radius-sm);">
+                  Screenshot could not be loaded
+                </div>
+                ${ticket.screenshot_filename || ticket.screenshot_size ? `
+                  <div class="screenshot-info">
+                    <span class="screenshot-filename">${ticket.screenshot_filename || 'Screenshot'}</span>
+                    ${ticket.screenshot_size ? `<span class="screenshot-size">${formatFileSize(ticket.screenshot_size)}</span>` : ''}
+                  </div>
+                ` : ''}
+                <p class="screenshot-hint">Click image to view full size</p>
+              </div>
+            </div>
+          `;
+        }
 
         modalBody.innerHTML = `
           <div class="ticket-detail-grid">
@@ -664,6 +841,7 @@
               </div>
             </div>
           </div>
+          ${screenshotSection}
         `;
 
         // Show modal
@@ -672,7 +850,7 @@
         modal.offsetHeight; // Force reflow
         modal.classList.add('active');
 
-        
+        console.log('Ticket modal displayed with screenshot support');
       }
 
       function hideTicketModal() {
@@ -682,13 +860,13 @@
           modal.style.display = 'none';
           modal.style.visibility = 'hidden';
           modalState.currentTicket = null;
-          
+          console.log('Ticket modal hidden');
         }
       }
 
       function showEditModal(ticket) {
         if (!ticket) {
-          
+          console.error('No ticket provided to showEditModal');
           return;
         }
 
@@ -701,7 +879,7 @@
           const modalTitle = document.getElementById('edit-modal-title');
           
           if (!modal || !modalTitle) {
-            
+            console.error('Edit modal elements not found');
             return;
           }
 
@@ -730,7 +908,7 @@
           modal.offsetHeight; // Force reflow
           modal.classList.add('active');
 
-          
+          console.log('Edit modal displayed');
         });
       }
 
@@ -745,26 +923,8 @@
           const form = document.getElementById('edit-ticket-form');
           if (form) form.reset();
           
-          
+          console.log('Edit modal hidden');
         }
-      }
-
-      // === UTILITY FUNCTIONS ===
-
-      function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-      }
-
-      function sanitizeClass(text) {
-        return text ? text.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') : '';
-      }
-
-      function formatDateTime(dateString) {
-        if (!dateString) return 'N/A';
-        const date = new Date(dateString);
-        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       }
 
       async function populateAssigneeDropdown() {
@@ -806,9 +966,9 @@
             dropdown.appendChild(option);
           });
 
-          
+          console.log('Assignee dropdown populated with', assignableUsers.length, 'users');
         } catch (error) {
-          
+          console.error('Error populating assignee dropdown:', error);
         }
       }
 
@@ -816,7 +976,7 @@
 
       function safeShowTicketDetails(ticketId) {
         if (!modalState.appInitialized) {
-          
+          console.log('App not ready, queuing show ticket call');
           modalState.blockedCalls.push({ type: 'show', ticketId });
           return;
         }
@@ -834,7 +994,7 @@
           const lookupData = window.app?.services?.data?.data || null;
           showTicketModal(ticket, lookupData);
         } else {
-          
+          console.error('Ticket not found:', ticketId);
           if (window.app?.services?.ui) {
             window.app.services.ui.showToast('Ticket not found', 'error');
           }
@@ -843,7 +1003,7 @@
 
       function safeEditTicket(ticketId) {
         if (!modalState.appInitialized) {
-          
+          console.log('App not ready, queuing edit ticket call');
           modalState.blockedCalls.push({ type: 'edit', ticketId });
           return;
         }
@@ -860,7 +1020,7 @@
         if (ticket) {
           showEditModal(ticket);
         } else {
-          
+          console.error('Ticket not found for editing:', ticketId);
           if (window.app?.services?.ui) {
             window.app.services.ui.showToast('Ticket not found', 'error');
           }
@@ -871,7 +1031,7 @@
         try {
           const ticketId = document.getElementById('edit-ticket-id')?.value;
           if (!ticketId) {
-            
+            console.error('No ticket ID found');
             return;
           }
 
@@ -915,7 +1075,7 @@
             throw new Error('Data service not available');
           }
         } catch (error) {
-          
+          console.error('Error saving ticket changes:', error);
           if (window.app?.services?.ui) {
             window.app.services.ui.showToast('Failed to update ticket: ' + error.message, 'error');
           }
@@ -931,7 +1091,7 @@
       // === EVENT HANDLERS ===
 
       function setupEventHandlers() {
-        
+        console.log('Setting up modal event handlers');
 
         // Remove any existing handlers first
         document.removeEventListener('click', handleDocumentClick);
@@ -941,10 +1101,16 @@
         document.addEventListener('click', handleDocumentClick);
         document.addEventListener('keydown', handleKeydown);
 
-        
+        console.log('Modal event handlers set up');
       }
 
       function handleDocumentClick(e) {
+        // Handle screenshot modal clicks
+        if (e.target.id === 'screenshot-modal') {
+          closeScreenshotModal();
+          return;
+        }
+
         // Handle modal close buttons
         if (e.target.closest('#ticket-modal .modal-close') || 
             e.target.closest('#ticket-modal .btn-secondary')) {
@@ -994,10 +1160,13 @@
 
       function handleKeydown(e) {
         if (e.key === 'Escape') {
+          const screenshotModal = document.getElementById('screenshot-modal');
           const ticketModal = document.getElementById('ticket-modal');
           const editModal = document.getElementById('edit-ticket-modal');
           
-          if (editModal && editModal.style.display === 'flex') {
+          if (screenshotModal && screenshotModal.style.display === 'flex') {
+            closeScreenshotModal();
+          } else if (editModal && editModal.style.display === 'flex') {
             hideEditModal();
           } else if (ticketModal && ticketModal.style.display === 'flex') {
             hideTicketModal();
@@ -1008,23 +1177,20 @@
       // === INITIALIZATION ===
 
       function initializeModalSystem() {
-        
+        console.log('Initializing modal system with screenshot support');
 
         // Force hide all modals on load
         const ticketModal = document.getElementById('ticket-modal');
         const editModal = document.getElementById('edit-ticket-modal');
+        const screenshotModal = document.getElementById('screenshot-modal');
         
-        if (ticketModal) {
-          ticketModal.style.display = 'none';
-          ticketModal.style.visibility = 'hidden';
-          ticketModal.classList.remove('active');
-        }
-        
-        if (editModal) {
-          editModal.style.display = 'none';
-          editModal.style.visibility = 'hidden';
-          editModal.classList.remove('active');
-        }
+        [ticketModal, editModal, screenshotModal].forEach(modal => {
+          if (modal) {
+            modal.style.display = 'none';
+            modal.style.visibility = 'hidden';
+            modal.classList.remove('active');
+          }
+        });
 
         // Setup event handlers
         setupEventHandlers();
@@ -1041,18 +1207,21 @@
         window.closeEditModal = hideEditModal;
         window.saveTicketChanges = saveTicketChanges;
         window.refreshAssigneeDropdown = populateAssigneeDropdown;
+        window.showScreenshotModal = showScreenshotModal;
+        window.closeScreenshotModal = closeScreenshotModal;
 
-        
+        console.log('Modal system initialized successfully');
       }
 
       // === APP INTEGRATION ===
 
       window.markModalSystemReady = function() {
         modalState.appInitialized = true;
+        console.log('Modal system marked as ready');
         
         // Process any queued calls
         if (modalState.blockedCalls.length > 0) {
-          
+          console.log('Processing', modalState.blockedCalls.length, 'queued modal calls');
           modalState.blockedCalls.forEach(call => {
             setTimeout(() => {
               if (call.type === 'show') safeShowTicketDetails(call.ticketId);
@@ -1062,7 +1231,7 @@
           modalState.blockedCalls = [];
         }
         
-        
+        console.log('Modal system fully ready');
       };
 
       // Initialize when DOM is ready
@@ -1075,7 +1244,7 @@
       // Fallback timeout to mark as ready
       setTimeout(() => {
         if (!modalState.appInitialized) {
-          
+          console.log('Fallback: marking modal system as ready');
           window.markModalSystemReady();
         }
       }, 3000);

@@ -146,11 +146,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const categorySelect = document.getElementById("ticket-category");
   const toastContainer = document.getElementById("toast-container");
 
+  // Screenshot upload elements
+  const fileInput = document.getElementById('screenshot-upload');
+  const uploadArea = document.getElementById('upload-area');
+  const previewContainer = document.getElementById('screenshot-preview');
+  const previewImage = document.getElementById('preview-image');
+  const fileName = document.getElementById('file-name');
+  const fileSize = document.getElementById('file-size');
+  const removeBtn = document.getElementById('remove-screenshot');
+
   // --- Data maps for lookups ---
   let basesMap = {};
   let categoriesMap = {};
   let departmentsMap = {};
   let teamsMap = {};
+  let selectedFile = null;
 
   // --- Utility Functions ---
 
@@ -268,6 +278,130 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // --- Screenshot Upload Functions ---
+
+  /**
+   * Validate uploaded file
+   */
+  function validateFile(file) {
+    const maxSize = 5 * 1024 * 1024; // 5MB for storage
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
+    
+    if (!allowedTypes.includes(file.type)) {
+      return 'Please select a valid image file (PNG, JPG, GIF)';
+    }
+    
+    if (file.size > maxSize) {
+      return 'File size must be less than 5MB';
+    }
+    
+    return null;
+  }
+
+  /**
+   * Format file size for display
+   */
+  function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  /**
+   * Handle file selection and preview
+   */
+  function handleFileSelect(file) {
+    const error = validateFile(file);
+    
+    if (error) {
+      if (uploadArea) {
+        uploadArea.classList.add('error');
+        uploadArea.querySelector('.file-upload-text').textContent = error;
+        uploadArea.querySelector('.file-upload-hint').textContent = 'Please try again with a different file';
+      }
+      showToast(error, 'error');
+      return;
+    }
+
+    if (uploadArea) {
+      uploadArea.classList.remove('error');
+    }
+    selectedFile = file;
+    
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      if (previewImage) previewImage.src = e.target.result;
+      if (fileName) fileName.textContent = file.name;
+      if (fileSize) fileSize.textContent = formatFileSize(file.size);
+      if (previewContainer) previewContainer.classList.remove('hidden');
+      
+      // Update upload area
+      if (uploadArea) {
+        uploadArea.querySelector('.file-upload-text').textContent = 'Screenshot selected';
+        uploadArea.querySelector('.file-upload-hint').textContent = 'Click to change or drag a different file';
+      }
+    };
+    reader.readAsDataURL(file);
+    
+    showToast('Screenshot uploaded successfully!', 'success');
+  }
+
+  /**
+   * Upload file to Supabase Storage
+   */
+  async function uploadScreenshot(file, ticketId) {
+    try {
+      console.log('Starting screenshot upload for ticket:', ticketId);
+      console.log('File details:', { name: file.name, size: file.size, type: file.type });
+
+      const fileExt = file.name.split('.').pop().toLowerCase();
+      const fileName = `${ticketId}_screenshot_${Date.now()}.${fileExt}`;
+      const filePath = `screenshots/${fileName}`;
+
+      console.log('Uploading to storage path:', filePath);
+
+      // Upload the file to the existing bucket
+      const { data, error } = await supabaseClient.storage
+        .from('ticket-attachments')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        console.error('Storage upload error:', error);
+        throw new Error(`Upload failed: ${error.message}`);
+      }
+
+      console.log('Storage upload successful:', data);
+
+      // Get the public URL
+      const { data: urlData } = supabaseClient.storage
+        .from('ticket-attachments')
+        .getPublicUrl(filePath);
+
+      console.log('Public URL generated:', urlData);
+
+      if (!urlData.publicUrl) {
+        throw new Error('Failed to generate public URL');
+      }
+
+      return {
+        path: filePath,
+        url: urlData.publicUrl,
+        filename: file.name,
+        size: file.size
+      };
+
+    } catch (error) {
+      console.error('Error uploading screenshot:', error);
+      throw new Error(`Failed to upload screenshot: ${error.message}`);
+    }
+  }
+
   // --- Tab Management ---
   function activateTab(tabName) {
     // Update tab states
@@ -296,8 +430,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Tab event listeners
-  trackTab.addEventListener("click", () => activateTab("track"));
-  submitTab.addEventListener("click", () => activateTab("submit"));
+  if (trackTab) trackTab.addEventListener("click", () => activateTab("track"));
+  if (submitTab) submitTab.addEventListener("click", () => activateTab("submit"));
 
   // Handle deep linking
   function handleInitialTab() {
@@ -311,17 +445,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- Loader Management ---
   function showLoader() {
-    loader.classList.remove("hidden");
-    loader.setAttribute("aria-hidden", "false");
+    if (loader) {
+      loader.classList.remove("hidden");
+      loader.setAttribute("aria-hidden", "false");
+    }
   }
 
   function hideLoader() {
-    loader.classList.add("hidden");
-    loader.setAttribute("aria-hidden", "true");
+    if (loader) {
+      loader.classList.add("hidden");
+      loader.setAttribute("aria-hidden", "true");
+    }
   }
 
   function clearResults() {
-    resultContainer.innerHTML = "";
+    if (resultContainer) {
+      resultContainer.innerHTML = "";
+    }
   }
 
   // --- Data Loading ---
@@ -358,7 +498,7 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error(`Failed to load teams: ${teamsError.message}`);
 
       // Populate bases
-      if (bases) {
+      if (bases && baseSelect) {
         bases.forEach((base) => {
           basesMap[base.id] = base.name;
           const option = document.createElement("option");
@@ -369,7 +509,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       // Populate categories
-      if (categories) {
+      if (categories && categorySelect) {
         categories.forEach((category) => {
           categoriesMap[category.id] = category.name;
           const option = document.createElement("option");
@@ -424,7 +564,8 @@ document.addEventListener("DOMContentLoaded", () => {
       // Search by ticket_number (human-readable) or id (UUID)
       let query = supabaseClient.from("tickets").select(`
           id, ticket_number, title, description, status, priority, created_at, updated_at,
-          submitter_name, submitter_email, base_id, category_id, assigned_to
+          submitter_name, submitter_email, base_id, category_id, assigned_to, 
+          screenshot_url, screenshot_filename, screenshot_size
         `);
 
       // Check if input looks like a UUID or ticket number
@@ -457,20 +598,22 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       
 
-      resultContainer.innerHTML = `
-        <div class="result-card">
-          <div class="error-state">
-            <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="15" y1="9" x2="9" y2="15"></line>
-              <line x1="9" y1="9" x2="15" y2="15"></line>
-            </svg>
-            <h3>Ticket Not Found</h3>
-            <p class="error-message">The ticket ID "${ticketInput}" could not be found or you don't have access to it.</p>
-            <p class="error-help">Please check your ticket ID and try again.</p>
+      if (resultContainer) {
+        resultContainer.innerHTML = `
+          <div class="result-card">
+            <div class="error-state">
+              <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+              </svg>
+              <h3>Ticket Not Found</h3>
+              <p class="error-message">The ticket ID "${ticketInput}" could not be found or you don't have access to it.</p>
+              <p class="error-help">Please check your ticket ID and try again.</p>
+            </div>
           </div>
-        </div>
-      `;
+        `;
+      }
 
       showToast("Ticket not found", "error");
     } finally {
@@ -491,91 +634,102 @@ document.addEventListener("DOMContentLoaded", () => {
     const createdDate = new Date(ticket.created_at);
     const updatedDate = new Date(ticket.updated_at);
 
-    resultContainer.innerHTML = `
-      <div class="result-card">
-        <div class="ticket-header">
-          <div class="ticket-id-display">
-            <h3>Ticket ${ticket.ticket_number || ticket.id}</h3>
-            <div class="ticket-badges">
-              ${getStatusBadge(ticket.status)}
-              ${getPriorityBadge(ticket.priority)}
-            </div>
-          </div>
-        </div>
-        
-        <div class="ticket-details">
-          <div class="detail-grid">
-            <div class="detail-item">
-              <label>Title</label>
-              <p>${ticket.title}</p>
-            </div>
-            
-            <div class="detail-item">
-              <label>Description</label>
-              <p class="description">${ticket.description}</p>
-            </div>
-            
-            <div class="detail-item">
-              <label>Base/Location</label>
-              <p>${baseName}</p>
-            </div>
-            
-            <div class="detail-item">
-              <label>Category</label>
-              <p>${categoryName}</p>
-            </div>
-            
-            <div class="detail-item">
-              <label>Submitted By</label>
-              <p>${ticket.submitter_name}<br><small>${
-      ticket.submitter_email
-    }</small></p>
-            </div>
-            
-            <div class="detail-item">
-              <label>Assigned To</label>
-              <p>${assignedTo}</p>
-            </div>
-            
-            <div class="detail-item">
-              <label>Created</label>
-              <p>${createdDate.toLocaleDateString()} at ${createdDate.toLocaleTimeString()}</p>
-            </div>
-            
-            <div class="detail-item">
-              <label>Last Updated</label>
-              <p>${updatedDate.toLocaleDateString()} at ${updatedDate.toLocaleTimeString()}</p>
+    if (resultContainer) {
+      resultContainer.innerHTML = `
+        <div class="result-card">
+          <div class="ticket-header">
+            <div class="ticket-id-display">
+              <h3>Ticket ${ticket.ticket_number || ticket.id}</h3>
+              <div class="ticket-badges">
+                ${getStatusBadge(ticket.status)}
+                ${getPriorityBadge(ticket.priority)}
+              </div>
             </div>
           </div>
           
-          ${
-            logs && logs.length > 0
-              ? `
-            <div class="ticket-logs">
-              <h4>Recent Activity</h4>
-              <div class="logs-list">
-                ${logs
-                  .map(
-                    (log) => `
-                  <div class="log-item">
-                    <div class="log-content">
-                      <p>${log.action || "Status updated"}</p>
-                      <small>${new Date(
-                        log.created_at
-                      ).toLocaleString()}</small>
-                    </div>
-                  </div>
-                `
-                  )
-                  .join("")}
+          <div class="ticket-details">
+            <div class="detail-grid">
+              <div class="detail-item">
+                <label>Title</label>
+                <p>${ticket.title}</p>
               </div>
+              
+              <div class="detail-item">
+                <label>Description</label>
+                <p class="description">${ticket.description}</p>
+              </div>
+              
+              <div class="detail-item">
+                <label>Base/Location</label>
+                <p>${baseName}</p>
+              </div>
+              
+              <div class="detail-item">
+                <label>Category</label>
+                <p>${categoryName}</p>
+              </div>
+              
+              <div class="detail-item">
+                <label>Submitted By</label>
+                <p>${ticket.submitter_name}<br><small>${ticket.submitter_email}</small></p>
+              </div>
+              
+              <div class="detail-item">
+                <label>Assigned To</label>
+                <p>${assignedTo}</p>
+              </div>
+              
+              <div class="detail-item">
+                <label>Created</label>
+                <p>${createdDate.toLocaleDateString()} at ${createdDate.toLocaleTimeString()}</p>
+              </div>
+              
+              <div class="detail-item">
+                <label>Last Updated</label>
+                <p>${updatedDate.toLocaleDateString()} at ${updatedDate.toLocaleTimeString()}</p>
+              </div>
+              
+              ${ticket.screenshot_url ? `
+              <div class="detail-item full-width">
+                <label>Screenshot</label>
+                <div class="screenshot-display">
+                  <img src="${ticket.screenshot_url}" alt="Ticket screenshot" class="ticket-screenshot" onclick="window.open('${ticket.screenshot_url}', '_blank')" />
+                  <p class="screenshot-hint">Click to view full size</p>
+                  ${ticket.screenshot_filename ? `<p class="screenshot-filename">${ticket.screenshot_filename}</p>` : ''}
+                </div>
+              </div>
+              ` : ''}
             </div>
-          `
-              : ""
-          }
+            
+            ${
+              logs && logs.length > 0
+                ? `
+              <div class="ticket-logs">
+                <h4>Recent Activity</h4>
+                <div class="logs-list">
+                  ${logs
+                    .map(
+                      (log) => `
+                    <div class="log-item">
+                      <div class="log-content">
+                        <p>${log.action || "Status updated"}</p>
+                        <small>${new Date(
+                          log.created_at
+                        ).toLocaleString()}</small>
+                      </div>
+                    </div>
+                  `
+                    )
+                    .join("")}
+                </div>
+              </div>
+            `
+                : ""
+            }
+          </div>
         </div>
-      </div>
-    `;
+      `;
+    }
   }
 
   // --- Ticket Submission ---
@@ -584,13 +738,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Get form values
     const formData = {
-      name: document.getElementById("submitter-name").value.trim(),
-      email: document.getElementById("submitter-email").value.trim(),
-      base_id: baseSelect.value,
-      category_id: categorySelect.value,
-      title: document.getElementById("ticket-title").value.trim(),
-      description: document.getElementById("ticket-desc").value.trim(),
-      priority: document.querySelector('input[name="priority"]:checked')?.value,
+      name: document.getElementById("submitter-name")?.value.trim() || "",
+      email: document.getElementById("submitter-email")?.value.trim() || "",
+      base_id: baseSelect?.value || "",
+      category_id: categorySelect?.value || "",
+      title: document.getElementById("ticket-title")?.value.trim() || "",
+      description: document.getElementById("ticket-desc")?.value.trim() || "",
+      priority: document.querySelector('input[name="priority"]:checked')?.value || "",
     };
 
     // Validation
@@ -600,8 +754,8 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const submitBtn = submitForm.querySelector(".submit-btn");
-    setButtonLoading(submitBtn, true);
+    const submitBtn = submitForm?.querySelector(".submit-btn");
+    if (submitBtn) setButtonLoading(submitBtn, true);
     showLoader();
     clearResults();
 
@@ -632,11 +786,56 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (ticketError) throw ticketError;
 
+      let screenshotData = null;
+
+      // Upload screenshot if one was selected
+      if (selectedFile) {
+        try {
+          if (uploadArea) uploadArea.classList.add('uploading');
+          showToast('Uploading screenshot...', 'info');
+          
+          screenshotData = await uploadScreenshot(selectedFile, ticket.id);
+          
+          // Update ticket with screenshot URL
+          const { error: updateError } = await supabaseClient
+            .from('tickets')
+            .update({ 
+              screenshot_url: screenshotData.url,
+              screenshot_filename: screenshotData.filename,
+              screenshot_size: screenshotData.size
+            })
+            .eq('id', ticket.id);
+
+          if (updateError) {
+            console.error('Error updating ticket with screenshot:', updateError);
+            showToast('Screenshot uploaded but failed to link to ticket', 'warning');
+          } else {
+            console.log('Screenshot successfully linked to ticket');
+            showToast('Screenshot uploaded successfully!', 'success');
+          }
+          
+          if (uploadArea) uploadArea.classList.remove('uploading');
+        } catch (screenshotError) {
+          console.error('Screenshot upload failed:', screenshotError);
+          if (uploadArea) uploadArea.classList.remove('uploading');
+          showToast(`Screenshot upload failed: ${screenshotError.message}`, 'error');
+        }
+      }
+
       // Display success result (remove manual logging since triggers handle it)
-      displaySubmissionSuccess(ticket.ticket_number, ticket.id, formData);
+      displaySubmissionSuccess(ticket.ticket_number, ticket.id, formData, screenshotData);
 
       // Reset form
-      submitForm.reset();
+      if (submitForm) submitForm.reset();
+      selectedFile = null;
+      if (previewContainer) previewContainer.classList.add('hidden');
+      if (uploadArea) {
+        uploadArea.classList.remove('error');
+        const uploadText = uploadArea.querySelector('.file-upload-text');
+        const uploadHint = uploadArea.querySelector('.file-upload-hint');
+        if (uploadText) uploadText.textContent = 'Click to upload screenshot';
+        if (uploadHint) uploadHint.textContent = 'or drag and drop image file here';
+      }
 
       // Clear priority selection
       document.querySelectorAll('input[name="priority"]').forEach((radio) => {
@@ -647,24 +846,26 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       
 
-      resultContainer.innerHTML = `
-        <div class="result-card">
-          <div class="error-state">
-            <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="15" y1="9" x2="9" y2="15"></line>
-              <line x1="9" y1="9" x2="15" y2="15"></line>
-            </svg>
-            <h3>Submission Failed</h3>
-            <p class="error-message">We couldn't submit your ticket at this time.</p>
-            <p class="error-help">Please try again or contact support if the problem persists.</p>
+      if (resultContainer) {
+        resultContainer.innerHTML = `
+          <div class="result-card">
+            <div class="error-state">
+              <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+              </svg>
+              <h3>Submission Failed</h3>
+              <p class="error-message">We couldn't submit your ticket at this time.</p>
+              <p class="error-help">Please try again or contact support if the problem persists.</p>
+            </div>
           </div>
-        </div>
-      `;
+        `;
+      }
 
       showToast("Failed to submit ticket. Please try again.", "error");
     } finally {
-      setButtonLoading(submitBtn, false);
+      if (submitBtn) setButtonLoading(submitBtn, false);
       hideLoader();
     }
   }
@@ -686,65 +887,145 @@ document.addEventListener("DOMContentLoaded", () => {
     return errors;
   }
 
-  function displaySubmissionSuccess(ticketNumber, ticketId, formData) {
+  function displaySubmissionSuccess(ticketNumber, ticketId, formData, screenshotData) {
     const baseName = basesMap[formData.base_id] || "Unknown";
     const categoryName = categoriesMap[formData.category_id] || "Unknown";
 
-    resultContainer.innerHTML = `
-      <div class="result-card">
-        <div class="success-state">
-          <svg class="success-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-            <polyline points="22,4 12,14.01 9,11.01"></polyline>
-          </svg>
-          <h3>Ticket Submitted Successfully!</h3>
-          <div class="ticket-id-success">
-            <label>Your Ticket ID:</label>
-            <code class="ticket-id-code">${ticketNumber}</code>
-            <button class="copy-btn" onclick="navigator.clipboard.writeText('${ticketNumber}')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-              </svg>
-            </button>
-          </div>
-          
-          <div class="submission-summary">
-            <h4>Ticket Summary</h4>
-            <div class="summary-grid">
-              <div><strong>Title:</strong> ${formData.title}</div>
-              <div><strong>Priority:</strong> ${getPriorityBadge(
-                formData.priority
-              )}</div>
-              <div><strong>Base:</strong> ${baseName}</div>
-              <div><strong>Category:</strong> ${categoryName}</div>
+    if (resultContainer) {
+      resultContainer.innerHTML = `
+        <div class="result-card">
+          <div class="success-state">
+            <svg class="success-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22,4 12,14.01 9,11.01"></polyline>
+            </svg>
+            <h3>Ticket Submitted Successfully!</h3>
+            <div class="ticket-id-success">
+              <label>Your Ticket ID:</label>
+              <code class="ticket-id-code">${ticketNumber}</code>
+              <button class="copy-btn" onclick="navigator.clipboard.writeText('${ticketNumber}').then(() => this.innerHTML = '✓ Copied!')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+              </button>
+            </div>
+            
+            <div class="submission-summary">
+              <h4>Ticket Summary</h4>
+              <div class="summary-grid">
+                <div><strong>Title:</strong> ${formData.title}</div>
+                <div><strong>Priority:</strong> ${getPriorityBadge(formData.priority)}</div>
+                <div><strong>Base:</strong> ${baseName}</div>
+                <div><strong>Category:</strong> ${categoryName}</div>
+                ${screenshotData ? '<div><strong>Screenshot:</strong> ✅ Uploaded</div>' : ''}
+              </div>
+            </div>
+            
+            <div class="next-steps">
+              <h4>What's Next?</h4>
+              <ul>
+                <li>Save your ticket ID for future reference</li>
+                <li>You'll receive email updates at ${formData.email}</li>
+                <li>Our support team will review your request within 24 hours</li>
+                <li>Use the "Track Ticket" tab to check status updates</li>
+                ${screenshotData ? '<li>Your screenshot has been attached to help our team understand the issue</li>' : ''}
+              </ul>
             </div>
           </div>
-          
-          <div class="next-steps">
-            <h4>What's Next?</h4>
-            <ul>
-              <li>Save your ticket ID for future reference</li>
-              <li>You'll receive email updates at ${formData.email}</li>
-              <li>Our support team will review your request within 24 hours</li>
-              <li>Use the "Track Ticket" tab to check status updates</li>
-            </ul>
-          </div>
         </div>
-      </div>
-    `;
+      `;
+    }
+  }
+
+  // --- Screenshot Upload Event Listeners ---
+  
+  // File input change event
+  if (fileInput) {
+    fileInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        handleFileSelect(file);
+      }
+    });
+  }
+
+  // Drag and drop functionality
+  if (uploadArea) {
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      uploadArea.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      uploadArea.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      uploadArea.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight(e) {
+      uploadArea.classList.add('dragover');
+    }
+
+    function unhighlight(e) {
+      uploadArea.classList.remove('dragover');
+    }
+
+    uploadArea.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      
+      if (files.length > 0) {
+        const file = files[0];
+        fileInput.files = files; // Update the input
+        handleFileSelect(file);
+      }
+    }
+
+    // Click to upload
+    uploadArea.addEventListener('click', function() {
+      fileInput.click();
+    });
+  }
+
+  // Remove screenshot
+  if (removeBtn) {
+    removeBtn.addEventListener('click', function() {
+      selectedFile = null;
+      if (fileInput) fileInput.value = '';
+      if (previewContainer) previewContainer.classList.add('hidden');
+      if (uploadArea) {
+        uploadArea.classList.remove('error');
+        const uploadText = uploadArea.querySelector('.file-upload-text');
+        const uploadHint = uploadArea.querySelector('.file-upload-hint');
+        if (uploadText) uploadText.textContent = 'Click to upload screenshot';
+        if (uploadHint) uploadHint.textContent = 'or drag and drop image file here';
+      }
+      showToast('Screenshot removed', 'info');
+    });
   }
 
   // --- Event Listeners ---
-  trackForm.addEventListener("submit", handleTicketTracking);
-  submitForm.addEventListener("submit", handleTicketSubmission);
+  if (trackForm) trackForm.addEventListener("submit", handleTicketTracking);
+  if (submitForm) submitForm.addEventListener("submit", handleTicketSubmission);
 
   // Form enhancements
-  document.getElementById("ticket-id").addEventListener("input", (e) => {
-    // Auto-format ticket ID input
-    let value = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, "");
-    e.target.value = value;
-  });
+  const ticketIdInput = document.getElementById("ticket-id");
+  if (ticketIdInput) {
+    ticketIdInput.addEventListener("input", (e) => {
+      // Auto-format ticket ID input
+      let value = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, "");
+      e.target.value = value;
+    });
+  }
 
   // Real-time form validation
   const requiredFields = [
@@ -758,17 +1039,22 @@ document.addEventListener("DOMContentLoaded", () => {
     if (field) {
       field.addEventListener("blur", (e) => {
         const isValid = e.target.value.trim() !== "";
-        e.target.classList.toggle("error", !isValid);
+        e.target.classList.toggle("invalid", !isValid);
+        e.target.classList.toggle("valid", isValid);
       });
     }
   });
 
   // Email validation
-  document.getElementById("submitter-email").addEventListener("blur", (e) => {
-    const email = e.target.value.trim();
-    const isValid = email === "" || isValidEmail(email);
-    e.target.classList.toggle("error", !isValid);
-  });
+  const emailField = document.getElementById("submitter-email");
+  if (emailField) {
+    emailField.addEventListener("blur", (e) => {
+      const email = e.target.value.trim();
+      const isValid = email === "" || isValidEmail(email);
+      e.target.classList.toggle("invalid", !isValid);
+      e.target.classList.toggle("valid", isValid && email !== "");
+    });
+  }
 
   // Priority selection visual feedback
   document.querySelectorAll('input[name="priority"]').forEach((radio) => {
