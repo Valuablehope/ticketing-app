@@ -113,6 +113,28 @@
   });
 })();
 
+async function sendTicketEmailNotification(type, email, title, status) {
+  try {
+    const res = await fetch(
+      "https://rkdblbnmtzyrapfemswq.functions.supabase.co/ticket-email-notify",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type, email, title, status }),
+      }
+    );
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("❌ Failed to send email:", errorText);
+    } else {
+      console.log("✅ Email notification sent");
+    }
+  } catch (error) {
+    console.error("❌ Error sending email:", error);
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   // Initialize Supabase
   const SUPABASE_URL = "https://rkdblbnmtzyrapfemswq.supabase.co";
@@ -129,9 +151,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const sessionData = JSON.parse(session);
       userEmail = sessionData.email || "";
     }
-  } catch (error) {
-    
-  }
+  } catch (error) {}
 
   // --- Element references ---
   const trackTab = document.getElementById("track-tab");
@@ -147,13 +167,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const toastContainer = document.getElementById("toast-container");
 
   // Screenshot upload elements
-  const fileInput = document.getElementById('screenshot-upload');
-  const uploadArea = document.getElementById('upload-area');
-  const previewContainer = document.getElementById('screenshot-preview');
-  const previewImage = document.getElementById('preview-image');
-  const fileName = document.getElementById('file-name');
-  const fileSize = document.getElementById('file-size');
-  const removeBtn = document.getElementById('remove-screenshot');
+  const fileInput = document.getElementById("screenshot-upload");
+  const uploadArea = document.getElementById("upload-area");
+  const previewContainer = document.getElementById("screenshot-preview");
+  const previewImage = document.getElementById("preview-image");
+  const fileName = document.getElementById("file-name");
+  const fileSize = document.getElementById("file-size");
+  const removeBtn = document.getElementById("remove-screenshot");
 
   // --- Data maps for lookups ---
   let basesMap = {};
@@ -285,16 +305,16 @@ document.addEventListener("DOMContentLoaded", () => {
    */
   function validateFile(file) {
     const maxSize = 5 * 1024 * 1024; // 5MB for storage
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
-    
+    const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/gif"];
+
     if (!allowedTypes.includes(file.type)) {
-      return 'Please select a valid image file (PNG, JPG, GIF)';
+      return "Please select a valid image file (PNG, JPG, GIF)";
     }
-    
+
     if (file.size > maxSize) {
-      return 'File size must be less than 5MB';
+      return "File size must be less than 5MB";
     }
-    
+
     return null;
   }
 
@@ -302,11 +322,11 @@ document.addEventListener("DOMContentLoaded", () => {
    * Format file size for display
    */
   function formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB'];
+    const sizes = ["Bytes", "KB", "MB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   }
 
   /**
@@ -314,39 +334,42 @@ document.addEventListener("DOMContentLoaded", () => {
    */
   function handleFileSelect(file) {
     const error = validateFile(file);
-    
+
     if (error) {
       if (uploadArea) {
-        uploadArea.classList.add('error');
-        uploadArea.querySelector('.file-upload-text').textContent = error;
-        uploadArea.querySelector('.file-upload-hint').textContent = 'Please try again with a different file';
+        uploadArea.classList.add("error");
+        uploadArea.querySelector(".file-upload-text").textContent = error;
+        uploadArea.querySelector(".file-upload-hint").textContent =
+          "Please try again with a different file";
       }
-      showToast(error, 'error');
+      showToast(error, "error");
       return;
     }
 
     if (uploadArea) {
-      uploadArea.classList.remove('error');
+      uploadArea.classList.remove("error");
     }
     selectedFile = file;
-    
+
     // Show preview
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
       if (previewImage) previewImage.src = e.target.result;
       if (fileName) fileName.textContent = file.name;
       if (fileSize) fileSize.textContent = formatFileSize(file.size);
-      if (previewContainer) previewContainer.classList.remove('hidden');
-      
+      if (previewContainer) previewContainer.classList.remove("hidden");
+
       // Update upload area
       if (uploadArea) {
-        uploadArea.querySelector('.file-upload-text').textContent = 'Screenshot selected';
-        uploadArea.querySelector('.file-upload-hint').textContent = 'Click to change or drag a different file';
+        uploadArea.querySelector(".file-upload-text").textContent =
+          "Screenshot selected";
+        uploadArea.querySelector(".file-upload-hint").textContent =
+          "Click to change or drag a different file";
       }
     };
     reader.readAsDataURL(file);
-    
-    showToast('Screenshot uploaded successfully!', 'success');
+
+    showToast("Screenshot uploaded successfully!", "success");
   }
 
   /**
@@ -354,50 +377,53 @@ document.addEventListener("DOMContentLoaded", () => {
    */
   async function uploadScreenshot(file, ticketId) {
     try {
-      console.log('Starting screenshot upload for ticket:', ticketId);
-      console.log('File details:', { name: file.name, size: file.size, type: file.type });
+      console.log("Starting screenshot upload for ticket:", ticketId);
+      console.log("File details:", {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+      });
 
-      const fileExt = file.name.split('.').pop().toLowerCase();
+      const fileExt = file.name.split(".").pop().toLowerCase();
       const fileName = `${ticketId}_screenshot_${Date.now()}.${fileExt}`;
       const filePath = `screenshots/${fileName}`;
 
-      console.log('Uploading to storage path:', filePath);
+      console.log("Uploading to storage path:", filePath);
 
       // Upload the file to the existing bucket
       const { data, error } = await supabaseClient.storage
-        .from('ticket-attachments')
+        .from("ticket-attachments")
         .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
+          cacheControl: "3600",
+          upsert: false,
         });
 
       if (error) {
-        console.error('Storage upload error:', error);
+        console.error("Storage upload error:", error);
         throw new Error(`Upload failed: ${error.message}`);
       }
 
-      console.log('Storage upload successful:', data);
+      console.log("Storage upload successful:", data);
 
       // Get the public URL
       const { data: urlData } = supabaseClient.storage
-        .from('ticket-attachments')
+        .from("ticket-attachments")
         .getPublicUrl(filePath);
 
-      console.log('Public URL generated:', urlData);
+      console.log("Public URL generated:", urlData);
 
       if (!urlData.publicUrl) {
-        throw new Error('Failed to generate public URL');
+        throw new Error("Failed to generate public URL");
       }
 
       return {
         path: filePath,
         url: urlData.publicUrl,
         filename: file.name,
-        size: file.size
+        size: file.size,
       };
-
     } catch (error) {
-      console.error('Error uploading screenshot:', error);
+      console.error("Error uploading screenshot:", error);
       throw new Error(`Failed to upload screenshot: ${error.message}`);
     }
   }
@@ -431,7 +457,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Tab event listeners
   if (trackTab) trackTab.addEventListener("click", () => activateTab("track"));
-  if (submitTab) submitTab.addEventListener("click", () => activateTab("submit"));
+  if (submitTab)
+    submitTab.addEventListener("click", () => activateTab("submit"));
 
   // Handle deep linking
   function handleInitialTab() {
@@ -537,7 +564,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       showToast("System data loaded successfully!", "success");
     } catch (error) {
-      
       showToast(`Error loading system data: ${error.message}`, "error");
     }
   }
@@ -596,8 +622,6 @@ document.addEventListener("DOMContentLoaded", () => {
       displayTicketDetails(ticket, logs);
       showToast("Ticket found successfully!", "success");
     } catch (error) {
-      
-
       if (resultContainer) {
         resultContainer.innerHTML = `
           <div class="result-card">
@@ -671,7 +695,9 @@ document.addEventListener("DOMContentLoaded", () => {
               
               <div class="detail-item">
                 <label>Submitted By</label>
-                <p>${ticket.submitter_name}<br><small>${ticket.submitter_email}</small></p>
+                <p>${ticket.submitter_name}<br><small>${
+        ticket.submitter_email
+      }</small></p>
               </div>
               
               <div class="detail-item">
@@ -689,16 +715,28 @@ document.addEventListener("DOMContentLoaded", () => {
                 <p>${updatedDate.toLocaleDateString()} at ${updatedDate.toLocaleTimeString()}</p>
               </div>
               
-              ${ticket.screenshot_url ? `
+              ${
+                ticket.screenshot_url
+                  ? `
               <div class="detail-item full-width">
                 <label>Screenshot</label>
                 <div class="screenshot-display">
-                  <img src="${ticket.screenshot_url}" alt="Ticket screenshot" class="ticket-screenshot" onclick="window.open('${ticket.screenshot_url}', '_blank')" />
+                  <img src="${
+                    ticket.screenshot_url
+                  }" alt="Ticket screenshot" class="ticket-screenshot" onclick="window.open('${
+                      ticket.screenshot_url
+                    }', '_blank')" />
                   <p class="screenshot-hint">Click to view full size</p>
-                  ${ticket.screenshot_filename ? `<p class="screenshot-filename">${ticket.screenshot_filename}</p>` : ''}
+                  ${
+                    ticket.screenshot_filename
+                      ? `<p class="screenshot-filename">${ticket.screenshot_filename}</p>`
+                      : ""
+                  }
                 </div>
               </div>
-              ` : ''}
+              `
+                  : ""
+              }
             </div>
             
             ${
@@ -744,7 +782,8 @@ document.addEventListener("DOMContentLoaded", () => {
       category_id: categorySelect?.value || "",
       title: document.getElementById("ticket-title")?.value.trim() || "",
       description: document.getElementById("ticket-desc")?.value.trim() || "",
-      priority: document.querySelector('input[name="priority"]:checked')?.value || "",
+      priority:
+        document.querySelector('input[name="priority"]:checked')?.value || "",
     };
 
     // Validation
@@ -763,12 +802,12 @@ document.addEventListener("DOMContentLoaded", () => {
       // Generate unique ticket number for display
       const ticketNumber = generateTicketNumber();
 
-      // Create ticket (let Supabase generate UUID for id)
+      // Create ticket and let Supabase generate UUID
       const { data: ticket, error: ticketError } = await supabaseClient
         .from("tickets")
         .insert([
           {
-            ticket_number: ticketNumber, // Human-readable ticket number
+            ticket_number: ticketNumber,
             submitter_name: formData.name,
             submitter_email: formData.email,
             base_id: formData.base_id,
@@ -778,63 +817,122 @@ document.addEventListener("DOMContentLoaded", () => {
             priority: formData.priority,
             status: "Open",
             assigned_to: null,
-            // Remove created_by - let it use the default value
           },
         ])
         .select("id, ticket_number")
         .single();
 
-      if (ticketError) throw ticketError;
+      if (ticketError) {
+        throw new Error(`Ticket creation failed: ${ticketError.message}`);
+      }
 
+      // ✅ Send notification email
+      // await sendTicketEmailNotification(
+      //   "submit",
+      //   formData.email,
+      //   formData.title,
+      //   "Open"
+      // );
+
+      // In handleTicketSubmission function, fix the Telegram API call:
+      try {
+        const telegramRes = await fetch(
+          "https://rkdblbnmtzyrapfemswq.functions.supabase.co/telegram-notify",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization:
+                "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrZGJsYm5tdHp5cmFwZmVtc3dxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1ODQyNTgsImV4cCI6MjA2NjE2MDI1OH0.TY7Ml-S-knKMNQ-HKylGLbpXIu9wHqGAZDHHAq4rRJc",
+            },
+            body: JSON.stringify({
+              email: formData.email,
+              title: formData.title,
+              status: "Open",
+              type: "submit",
+              ticket_number: ticket.ticket_number,
+              description: formData.description,
+            }),
+          }
+        );
+
+        const result = await telegramRes.json();
+        if (!telegramRes.ok) {
+          console.warn("Telegram notify failed:", result.error || result);
+          showToast("Ticket saved, but Telegram notify failed.", "warning");
+        } else {
+          console.log("✅ Telegram notification sent");
+        }
+      } catch (err) {
+        console.error("Telegram fetch error:", err);
+        showToast("Could not send Telegram notification.", "error");
+      }
+      console.log("✅ Ticket created:", ticket);
+
+      // --- Screenshot Handling ---
       let screenshotData = null;
 
-      // Upload screenshot if one was selected
       if (selectedFile) {
         try {
-          if (uploadArea) uploadArea.classList.add('uploading');
-          showToast('Uploading screenshot...', 'info');
-          
+          if (uploadArea) uploadArea.classList.add("uploading");
+          showToast("Uploading screenshot...", "info");
+
+          // Upload to Supabase storage
           screenshotData = await uploadScreenshot(selectedFile, ticket.id);
-          
-          // Update ticket with screenshot URL
+
+          // Update the ticket record with screenshot info
           const { error: updateError } = await supabaseClient
-            .from('tickets')
-            .update({ 
+            .from("tickets")
+            .update({
               screenshot_url: screenshotData.url,
               screenshot_filename: screenshotData.filename,
-              screenshot_size: screenshotData.size
+              screenshot_size: screenshotData.size,
             })
-            .eq('id', ticket.id);
+            .eq("id", ticket.id);
 
           if (updateError) {
-            console.error('Error updating ticket with screenshot:', updateError);
-            showToast('Screenshot uploaded but failed to link to ticket', 'warning');
+            console.error(
+              "❌ Failed to link screenshot to ticket:",
+              updateError
+            );
+            showToast(
+              "Screenshot uploaded but failed to link to ticket",
+              "warning"
+            );
           } else {
-            console.log('Screenshot successfully linked to ticket');
-            showToast('Screenshot uploaded successfully!', 'success');
+            console.log("✅ Screenshot linked to ticket");
+            showToast("Screenshot uploaded successfully!", "success");
           }
-          
-          if (uploadArea) uploadArea.classList.remove('uploading');
         } catch (screenshotError) {
-          console.error('Screenshot upload failed:', screenshotError);
-          if (uploadArea) uploadArea.classList.remove('uploading');
-          showToast(`Screenshot upload failed: ${screenshotError.message}`, 'error');
+          console.error("❌ Screenshot upload failed:", screenshotError);
+          showToast(
+            `Screenshot upload failed: ${screenshotError.message}`,
+            "error"
+          );
+        } finally {
+          if (uploadArea) uploadArea.classList.remove("uploading");
         }
       }
 
       // Display success result (remove manual logging since triggers handle it)
-      displaySubmissionSuccess(ticket.ticket_number, ticket.id, formData, screenshotData);
+      displaySubmissionSuccess(
+        ticket.ticket_number,
+        ticket.id,
+        formData,
+        screenshotData
+      );
 
       // Reset form
       if (submitForm) submitForm.reset();
       selectedFile = null;
-      if (previewContainer) previewContainer.classList.add('hidden');
+      if (previewContainer) previewContainer.classList.add("hidden");
       if (uploadArea) {
-        uploadArea.classList.remove('error');
-        const uploadText = uploadArea.querySelector('.file-upload-text');
-        const uploadHint = uploadArea.querySelector('.file-upload-hint');
-        if (uploadText) uploadText.textContent = 'Click to upload screenshot';
-        if (uploadHint) uploadHint.textContent = 'or drag and drop image file here';
+        uploadArea.classList.remove("error");
+        const uploadText = uploadArea.querySelector(".file-upload-text");
+        const uploadHint = uploadArea.querySelector(".file-upload-hint");
+        if (uploadText) uploadText.textContent = "Click to upload screenshot";
+        if (uploadHint)
+          uploadHint.textContent = "or drag and drop image file here";
       }
 
       // Clear priority selection
@@ -844,8 +942,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       showToast("Ticket submitted successfully!", "success", "Success");
     } catch (error) {
-      
-
       if (resultContainer) {
         resultContainer.innerHTML = `
           <div class="result-card">
@@ -887,7 +983,12 @@ document.addEventListener("DOMContentLoaded", () => {
     return errors;
   }
 
-  function displaySubmissionSuccess(ticketNumber, ticketId, formData, screenshotData) {
+  function displaySubmissionSuccess(
+    ticketNumber,
+    ticketId,
+    formData,
+    screenshotData
+  ) {
     const baseName = basesMap[formData.base_id] || "Unknown";
     const categoryName = categoriesMap[formData.category_id] || "Unknown";
 
@@ -915,10 +1016,16 @@ document.addEventListener("DOMContentLoaded", () => {
               <h4>Ticket Summary</h4>
               <div class="summary-grid">
                 <div><strong>Title:</strong> ${formData.title}</div>
-                <div><strong>Priority:</strong> ${getPriorityBadge(formData.priority)}</div>
+                <div><strong>Priority:</strong> ${getPriorityBadge(
+                  formData.priority
+                )}</div>
                 <div><strong>Base:</strong> ${baseName}</div>
                 <div><strong>Category:</strong> ${categoryName}</div>
-                ${screenshotData ? '<div><strong>Screenshot:</strong> ✅ Uploaded</div>' : ''}
+                ${
+                  screenshotData
+                    ? "<div><strong>Screenshot:</strong> ✅ Uploaded</div>"
+                    : ""
+                }
               </div>
             </div>
             
@@ -929,7 +1036,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 <li>You'll receive email updates at ${formData.email}</li>
                 <li>Our support team will review your request within 24 hours</li>
                 <li>Use the "Track Ticket" tab to check status updates</li>
-                ${screenshotData ? '<li>Your screenshot has been attached to help our team understand the issue</li>' : ''}
+                ${
+                  screenshotData
+                    ? "<li>Your screenshot has been attached to help our team understand the issue</li>"
+                    : ""
+                }
               </ul>
             </div>
           </div>
@@ -939,10 +1050,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- Screenshot Upload Event Listeners ---
-  
+
   // File input change event
   if (fileInput) {
-    fileInput.addEventListener('change', function(e) {
+    fileInput.addEventListener("change", function (e) {
       const file = e.target.files[0];
       if (file) {
         handleFileSelect(file);
@@ -952,7 +1063,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Drag and drop functionality
   if (uploadArea) {
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
       uploadArea.addEventListener(eventName, preventDefaults, false);
     });
 
@@ -961,28 +1072,28 @@ document.addEventListener("DOMContentLoaded", () => {
       e.stopPropagation();
     }
 
-    ['dragenter', 'dragover'].forEach(eventName => {
+    ["dragenter", "dragover"].forEach((eventName) => {
       uploadArea.addEventListener(eventName, highlight, false);
     });
 
-    ['dragleave', 'drop'].forEach(eventName => {
+    ["dragleave", "drop"].forEach((eventName) => {
       uploadArea.addEventListener(eventName, unhighlight, false);
     });
 
     function highlight(e) {
-      uploadArea.classList.add('dragover');
+      uploadArea.classList.add("dragover");
     }
 
     function unhighlight(e) {
-      uploadArea.classList.remove('dragover');
+      uploadArea.classList.remove("dragover");
     }
 
-    uploadArea.addEventListener('drop', handleDrop, false);
+    uploadArea.addEventListener("drop", handleDrop, false);
 
     function handleDrop(e) {
       const dt = e.dataTransfer;
       const files = dt.files;
-      
+
       if (files.length > 0) {
         const file = files[0];
         fileInput.files = files; // Update the input
@@ -991,25 +1102,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Click to upload
-    uploadArea.addEventListener('click', function() {
+    uploadArea.addEventListener("click", function () {
       fileInput.click();
     });
   }
 
   // Remove screenshot
   if (removeBtn) {
-    removeBtn.addEventListener('click', function() {
+    removeBtn.addEventListener("click", function () {
       selectedFile = null;
-      if (fileInput) fileInput.value = '';
-      if (previewContainer) previewContainer.classList.add('hidden');
+      if (fileInput) fileInput.value = "";
+      if (previewContainer) previewContainer.classList.add("hidden");
       if (uploadArea) {
-        uploadArea.classList.remove('error');
-        const uploadText = uploadArea.querySelector('.file-upload-text');
-        const uploadHint = uploadArea.querySelector('.file-upload-hint');
-        if (uploadText) uploadText.textContent = 'Click to upload screenshot';
-        if (uploadHint) uploadHint.textContent = 'or drag and drop image file here';
+        uploadArea.classList.remove("error");
+        const uploadText = uploadArea.querySelector(".file-upload-text");
+        const uploadHint = uploadArea.querySelector(".file-upload-hint");
+        if (uploadText) uploadText.textContent = "Click to upload screenshot";
+        if (uploadHint)
+          uploadHint.textContent = "or drag and drop image file here";
       }
-      showToast('Screenshot removed', 'info');
+      showToast("Screenshot removed", "info");
     });
   }
 
@@ -1106,7 +1218,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     } catch (error) {
-      
       showToast(
         "Failed to initialize application. Please refresh the page.",
         "error"
