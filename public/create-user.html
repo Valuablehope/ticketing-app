@@ -4,25 +4,19 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Create HIS User</title>
-
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   
-  <!-- Base styles -->
-    <link rel="stylesheet" href="css/base/variables.css">
-    <link rel="stylesheet" href="css/base/reset.css">
-    <link rel="stylesheet" href="css/base/utilities.css">
-    
-    <!-- Component styles -->
-    <link rel="stylesheet" href="css/components/buttons.css">
-    <link rel="stylesheet" href="css/components/forms.css">
-    <link rel="stylesheet" href="css/components/navigation.css">
-    
-    <!-- Page-specific styles -->
-    <link rel="stylesheet" href="css/pages/create-user.css">
-    
+  <link rel="stylesheet" href="css/base/variables.css">
+  <link rel="stylesheet" href="css/base/reset.css">
+  <link rel="stylesheet" href="css/base/utilities.css">
+  <link rel="stylesheet" href="css/components/buttons.css">
+  <link rel="stylesheet" href="css/components/forms.css">
+  <link rel="stylesheet" href="css/components/navigation.css">
+  <link rel="stylesheet" href="css/components/toast-notifications.css">
+  <link rel="stylesheet" href="css/pages/create-user.css">
 </head>
+
 <body>
-  <!-- Background Decorative Elements -->
   <div class="page-background">
     <div class="floating-orb orb-1"></div>
     <div class="floating-orb orb-2"></div>
@@ -30,7 +24,6 @@
   </div>
 
   <div class="container">
-    <!-- Header Section -->
     <div class="page-header">
       <div class="header-content">
         <div class="header-icon">
@@ -46,17 +39,13 @@
         </div>
       </div>
       <div class="progress-indicator">
-        <div class="progress-bar">
-          <div class="progress-fill"></div>
-        </div>
+        <div class="progress-bar"><div class="progress-fill"></div></div>
         <span class="progress-text">Step 1 of 1</span>
       </div>
     </div>
 
-    <!-- Main Form Card -->
     <div class="main-card">
       <form id="create-user-form" class="user-creation-form">
-        <!-- Personal Information Section -->
         <div class="form-section personal-info">
           <div class="section-header">
             <div class="section-icon">
@@ -94,9 +83,7 @@
                 <label for="user-password">Password</label>
                 <div class="input-decoration"></div>
                 <div class="password-strength">
-                  <div class="strength-bar">
-                    <div class="strength-fill"></div>
-                  </div>
+                  <div class="strength-bar"><div class="strength-fill"></div></div>
                   <span class="strength-text">Enter password</span>
                 </div>
               </div>
@@ -104,7 +91,6 @@
           </div>
         </div>
 
-        <!-- Role & Access Section -->
         <div class="form-section role-access">
           <div class="section-header">
             <div class="section-icon">
@@ -184,7 +170,6 @@
           </div>
         </div>
 
-        <!-- Department & Location Section -->
         <div class="form-section department-location">
           <div class="section-header">
             <div class="section-icon">
@@ -251,7 +236,6 @@
           </div>
         </div>
 
-        <!-- Form Actions -->
         <div class="form-actions">
           <div class="action-buttons">
             <a href="portal.html" class="btn btn-secondary">
@@ -267,19 +251,19 @@
                 <circle cx="8.5" cy="7" r="4"/>
                 <path d="M20 8v6M23 11h-6"/>
               </svg>
-              <div class="btn-loading">
-                <div class="spinner"></div>
-              </div>
+              <div class="btn-loading"><div class="spinner"></div></div>
             </button>
           </div>
         </div>
       </form>
 
-      <!-- Status Messages -->
       <div id="create-error" class="status-message error-message"></div>
       <div id="create-success" class="status-message success-message"></div>
     </div>
   </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js" defer></script>
   <script src="js/create-user.js" defer></script>

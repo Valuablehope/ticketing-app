@@ -5,206 +5,46 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>HIS Ticketing System</title>
-
-  <!-- Google Font -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-
-  <!-- Base styles -->
   <link rel="stylesheet" href="css/base/variables.css">
   <link rel="stylesheet" href="css/base/reset.css">
   <link rel="stylesheet" href="css/base/utilities.css">
-  
-  <!-- Component styles -->
   <link rel="stylesheet" href="css/components/buttons.css">
   <link rel="stylesheet" href="css/components/forms.css">
   <link rel="stylesheet" href="css/components/navigation.css">
   <link rel="stylesheet" href="css/components/cards.css">
-  
-  <!-- Page-specific styles -->
   <link rel="stylesheet" href="css/pages/ticket-submission.css">
   
-  <!-- Additional styles for screenshot upload -->
   <style>
-    /* Screenshot Upload Specific Styles */
-    .file-upload-limit {
-      font-size: var(--font-size-xs);
-      color: var(--text-lighter);
-      margin-top: 0.25rem;
-    }
-
-    .screenshot-preview {
-      margin-top: 1rem;
-      border: 2px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 1rem;
-      background: var(--surface-hover);
-    }
-
-    .screenshot-preview.hidden {
-      display: none;
-    }
-
-    .preview-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1rem;
-    }
-
-    .preview-title {
-      font-size: var(--font-size-sm);
-      font-weight: 600;
-      color: var(--text);
-    }
-
-    .remove-btn {
-      background: none;
-      border: none;
-      color: var(--error);
-      cursor: pointer;
-      padding: 0.25rem;
-      border-radius: var(--radius-sm);
-      transition: var(--transition);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .remove-btn:hover {
-      background: var(--error-light);
-    }
-
-    .remove-btn svg {
-      width: 16px;
-      height: 16px;
-      stroke-width: 2;
-    }
-
-    .preview-content {
-      display: flex;
-      gap: 1rem;
-      align-items: center;
-    }
-
-    .preview-image {
-      max-width: 120px;
-      max-height: 80px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      object-fit: cover;
-    }
-
-    .preview-info {
-      flex: 1;
-    }
-
-    .file-name {
-      font-size: var(--font-size-sm);
-      font-weight: 500;
-      color: var(--text);
-      margin-bottom: 0.25rem;
-      word-break: break-word;
-    }
-
-    .file-size {
-      font-size: var(--font-size-xs);
-      color: var(--text-light);
-    }
-
-    .file-upload-area.error {
-      border-color: var(--error);
-      background: var(--error-light);
-      color: var(--error);
-    }
-
-    .file-upload-area.uploading {
-      pointer-events: none;
-    }
-
-    .file-upload-area.uploading .file-upload-icon {
-      animation: spin 1s linear infinite;
-    }
-
-    /* Ticket screenshot display styles */
-    .screenshot-display {
-      margin-top: 0.5rem;
-    }
-
-    .ticket-screenshot {
-      max-width: 300px;
-      max-height: 200px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      cursor: pointer;
-      transition: var(--transition);
-      object-fit: cover;
-    }
-
-    .ticket-screenshot:hover {
-      box-shadow: var(--shadow-lg);
-      transform: scale(1.02);
-    }
-
-    .screenshot-hint {
-      font-size: var(--font-size-xs);
-      color: var(--text-light);
-      margin-top: 0.5rem;
-      font-style: italic;
-    }
-
-    .detail-item.full-width {
-      grid-column: 1 / -1;
-    }
-
-    .copy-btn {
-      background: none;
-      border: none;
-      color: var(--accent);
-      cursor: pointer;
-      padding: 0.25rem;
-      border-radius: var(--radius-sm);
-      transition: var(--transition);
-      display: inline-flex;
-      align-items: center;
-      margin-left: 0.5rem;
-    }
-
-    .copy-btn:hover {
-      background: rgba(79, 70, 229, 0.1);
-    }
-
-    .copy-btn svg {
-      width: 16px;
-      height: 16px;
-      stroke-width: 2;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    @media (max-width: 480px) {
-      .preview-content {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.75rem;
-      }
-      
-      .preview-image {
-        max-width: 100%;
-        max-height: 120px;
-      }
-      
-      .ticket-screenshot {
-        max-width: 100%;
-        max-height: 150px;
-      }
-    }
+    .file-upload-limit{font-size:var(--font-size-xs);color:var(--text-lighter);margin-top:0.25rem}
+    .screenshot-preview{margin-top:1rem;border:2px solid var(--border);border-radius:var(--radius-sm);padding:1rem;background:var(--surface-hover)}
+    .screenshot-preview.hidden{display:none}
+    .preview-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+    .preview-title{font-size:var(--font-size-sm);font-weight:600;color:var(--text)}
+    .remove-btn{background:none;border:none;color:var(--error);cursor:pointer;padding:0.25rem;border-radius:var(--radius-sm);transition:var(--transition);display:flex;align-items:center;justify-content:center}
+    .remove-btn:hover{background:var(--error-light)}
+    .remove-btn svg{width:16px;height:16px;stroke-width:2}
+    .preview-content{display:flex;gap:1rem;align-items:center}
+    .preview-image{max-width:120px;max-height:80px;border-radius:var(--radius-sm);border:1px solid var(--border);object-fit:cover}
+    .preview-info{flex:1}
+    .file-name{font-size:var(--font-size-sm);font-weight:500;color:var(--text);margin-bottom:0.25rem;word-break:break-word}
+    .file-size{font-size:var(--font-size-xs);color:var(--text-light)}
+    .file-upload-area.error{border-color:var(--error);background:var(--error-light);color:var(--error)}
+    .file-upload-area.uploading{pointer-events:none}
+    .file-upload-area.uploading .file-upload-icon{animation:spin 1s linear infinite}
+    .screenshot-display{margin-top:0.5rem}
+    .ticket-screenshot{max-width:300px;max-height:200px;border-radius:var(--radius-sm);border:1px solid var(--border);cursor:pointer;transition:var(--transition);object-fit:cover}
+    .ticket-screenshot:hover{box-shadow:var(--shadow-lg);transform:scale(1.02)}
+    .screenshot-hint{font-size:var(--font-size-xs);color:var(--text-light);margin-top:0.5rem;font-style:italic}
+    .detail-item.full-width{grid-column:1/-1}
+    .copy-btn{background:none;border:none;color:var(--accent);cursor:pointer;padding:0.25rem;border-radius:var(--radius-sm);transition:var(--transition);display:inline-flex;align-items:center;margin-left:0.5rem}
+    .copy-btn:hover{background:rgba(79,70,229,0.1)}
+    .copy-btn svg{width:16px;height:16px;stroke-width:2}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @media(max-width:480px){.preview-content{flex-direction:column;align-items:flex-start;gap:0.75rem}.preview-image{max-width:100%;max-height:120px}.ticket-screenshot{max-width:100%;max-height:150px}}
   </style>
   
-  <!-- Security Check Script - Must load first -->
   <script>
-    // Immediate security check before page loads
     (function() {
       'use strict';
       
@@ -217,13 +57,9 @@
           
           const sessionData = JSON.parse(session);
           
-          // Check expiration
           if (!sessionData.expiration || sessionData.expiration <= Date.now()) return false;
-          
-          // Check verification status
           if (!sessionData.verified || !sessionData.token) return false;
           
-          // Verify signature
           try {
             const signatureData = JSON.parse(atob(signature));
             if (!signatureData.token || signatureData.token !== sessionData.token) return false;
@@ -238,21 +74,15 @@
         }
       }
       
-      // If session is invalid, prevent page load and redirect
       if (!isValidSession()) {
-        // Clear any invalid session data
         sessionStorage.removeItem('ticketing_session');
         sessionStorage.removeItem('session_signature');
-        
-        // Redirect immediately
         window.location.replace('../index.html');
         
-        // Stop page execution
         document.addEventListener('DOMContentLoaded', function(e) {
           e.stopImmediatePropagation();
         }, true);
         
-        // Block the page content
         document.addEventListener('readystatechange', function() {
           if (document.readyState === 'interactive' || document.readyState === 'complete') {
             document.body.innerHTML = `
@@ -278,9 +108,7 @@
     })();
   </script>
 
-  <!-- Supabase UMD -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js" defer></script>
-  <!-- Our front-end logic -->
   <script src="js/ticket-submission.js" defer></script>
 </head>
 <body>
@@ -352,16 +180,7 @@
               <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
               </svg>
-              <input 
-                type="text" 
-                id="ticket-id" 
-                class="search-input" 
-                placeholder="Enter Ticket ID (e.g., TKT-12345)" 
-                required 
-                pattern="[A-Za-z0-9\-]+"
-                aria-describedby="ticket-id-help"
-                autocomplete="off"
-              />
+              <input type="text" id="ticket-id" class="search-input" placeholder="Enter Ticket ID (e.g., TKT-12345)" required pattern="[A-Za-z0-9\-]+" aria-describedby="ticket-id-help" autocomplete="off"/>
             </div>
             <button type="submit" class="search-btn" aria-label="Search Ticket">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -369,9 +188,7 @@
               </svg>
             </button>
           </div>
-          <div id="ticket-id-help" class="form-help">
-            Use the ticket ID provided when you submitted your request
-          </div>
+          <div id="ticket-id-help" class="form-help">Use the ticket ID provided when you submitted your request</div>
         </form>
       </section>
 
@@ -394,30 +211,12 @@
             </h3>
             <div class="form-row">
               <div class="form-group">
-                <label for="submitter-name" class="form-label">
-                  Full Name <span class="required">*</span>
-                </label>
-                <input 
-                  type="text" 
-                  id="submitter-name" 
-                  class="form-control" 
-                  placeholder="Enter your full name" 
-                  required 
-                  autocomplete="name"
-                />
+                <label for="submitter-name" class="form-label">Full Name <span class="required">*</span></label>
+                <input type="text" id="submitter-name" class="form-control" placeholder="Enter your full name" required autocomplete="name"/>
               </div>
               <div class="form-group">
-                <label for="submitter-email" class="form-label">
-                  Email Address <span class="required">*</span>
-                </label>
-                <input 
-                  type="email" 
-                  id="submitter-email" 
-                  class="form-control" 
-                  placeholder="your.email@company.com" 
-                  required 
-                  autocomplete="email"
-                />
+                <label for="submitter-email" class="form-label">Email Address <span class="required">*</span></label>
+                <input type="email" id="submitter-email" class="form-control" placeholder="your.email@company.com" required autocomplete="email"/>
               </div>
             </div>
           </div>
@@ -437,9 +236,7 @@
             
             <div class="form-row">
               <div class="form-group">
-                <label for="ticket-base" class="form-label">
-                  Base/Location <span class="required">*</span>
-                </label>
+                <label for="ticket-base" class="form-label">Base/Location <span class="required">*</span></label>
                 <div class="select-wrapper">
                   <select id="ticket-base" class="form-control" required>
                     <option value="" disabled selected>Select your base/location</option>
@@ -450,9 +247,7 @@
                 </div>
               </div>
               <div class="form-group">
-                <label for="ticket-category" class="form-label">
-                  Issue Category <span class="required">*</span>
-                </label>
+                <label for="ticket-category" class="form-label">Issue Category <span class="required">*</span></label>
                 <div class="select-wrapper">
                   <select id="ticket-category" class="form-control" required>
                     <option value="" disabled selected>Select issue category</option>
@@ -465,39 +260,19 @@
             </div>
 
             <div class="form-group">
-              <label for="ticket-title" class="form-label">
-                Issue Title <span class="required">*</span>
-              </label>
-              <input 
-                type="text" 
-                id="ticket-title" 
-                class="form-control" 
-                placeholder="Brief description of your issue" 
-                required 
-                maxlength="100"
-              />
+              <label for="ticket-title" class="form-label">Issue Title <span class="required">*</span></label>
+              <input type="text" id="ticket-title" class="form-control" placeholder="Brief description of your issue" required maxlength="100"/>
               <div class="form-help">Keep it concise - maximum 100 characters</div>
             </div>
 
             <div class="form-group">
-              <label for="ticket-desc" class="form-label">
-                Detailed Description <span class="required">*</span>
-              </label>
-              <textarea 
-                id="ticket-desc" 
-                class="form-control" 
-                rows="4" 
-                placeholder="Please provide as much detail as possible about your issue, including steps to reproduce if applicable..."
-                required
-                maxlength="1000"
-              ></textarea>
+              <label for="ticket-desc" class="form-label">Detailed Description <span class="required">*</span></label>
+              <textarea id="ticket-desc" class="form-control" rows="4" placeholder="Please provide as much detail as possible about your issue, including steps to reproduce if applicable..." required maxlength="1000"></textarea>
               <div class="form-help">Include error messages, steps to reproduce, and any troubleshooting already attempted</div>
             </div>
 
             <div class="form-group">
-              <label class="form-label">
-                Priority Level <span class="required">*</span>
-              </label>
+              <label class="form-label">Priority Level <span class="required">*</span></label>
               <div class="priority-options">
                 <label class="priority-option">
                   <input type="radio" name="priority" value="Low" required>
@@ -527,17 +302,9 @@
             </div>
 
             <div class="form-group">
-              <label for="screenshot-upload" class="form-label">
-                Screenshot (Optional)
-              </label>
+              <label for="screenshot-upload" class="form-label">Screenshot (Optional)</label>
               <div class="file-upload-wrapper">
-                <input 
-                  type="file" 
-                  id="screenshot-upload" 
-                  class="file-upload-input"
-                  accept="image/*"
-                  aria-describedby="screenshot-help"
-                />
+                <input type="file" id="screenshot-upload" class="file-upload-input" accept="image/*" aria-describedby="screenshot-help"/>
                 <div class="file-upload-area" id="upload-area">
                   <svg class="file-upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
@@ -629,7 +396,6 @@
     <div id="toast-container" class="toast-container"></div>
   </div>
 
-  <!-- Session Management Script -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       // Display user email in session bar
@@ -667,7 +433,6 @@
         activeTab.setAttribute('aria-selected', 'true');
         inactiveTab.classList.remove('active');
         inactiveTab.setAttribute('aria-selected', 'false');
-        
         activeSection.classList.add('active');
         inactiveSection.classList.remove('active');
       }
@@ -688,7 +453,6 @@
         resetBtn.addEventListener('click', function() {
           if (confirm('Are you sure you want to reset the form? All entered data will be lost.')) {
             submitForm.reset();
-            // Clear screenshot preview
             const preview = document.getElementById('screenshot-preview');
             const uploadArea = document.getElementById('upload-area');
             if (preview) preview.classList.add('hidden');
@@ -712,9 +476,8 @@
 
       let selectedFile = null;
 
-      // File validation
       function validateFile(file) {
-        const maxSize = 5 * 1024 * 1024; // 5MB
+        const maxSize = 5 * 1024 * 1024;
         const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
         
         if (!allowedTypes.includes(file.type)) {
@@ -728,16 +491,13 @@
         return null;
       }
 
-      // Format file size
       function formatFileSize(bytes) {
         if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB'];
+        const k = 1024, sizes = ['Bytes', 'KB', 'MB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
       }
 
-      // Handle file selection
       function handleFileSelect(file) {
         const error = validateFile(file);
         
@@ -751,7 +511,6 @@
         uploadArea.classList.remove('error');
         selectedFile = file;
         
-        // Show preview
         const reader = new FileReader();
         reader.onload = function(e) {
           previewImage.src = e.target.result;
@@ -759,14 +518,12 @@
           fileSize.textContent = formatFileSize(file.size);
           previewContainer.classList.remove('hidden');
           
-          // Update upload area
           uploadArea.querySelector('.file-upload-text').textContent = 'Screenshot selected';
           uploadArea.querySelector('.file-upload-hint').textContent = 'Click to change or drag a different file';
         };
         reader.readAsDataURL(file);
       }
 
-      // File input change event
       if (fileInput) {
         fileInput.addEventListener('change', function(e) {
           const file = e.target.files[0];
@@ -776,53 +533,42 @@
         });
       }
 
-      // Drag and drop functionality
       if (uploadArea) {
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-          uploadArea.addEventListener(eventName, preventDefaults, false);
+          uploadArea.addEventListener(eventName, function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+          }, false);
         });
 
-        function preventDefaults(e) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-
         ['dragenter', 'dragover'].forEach(eventName => {
-          uploadArea.addEventListener(eventName, highlight, false);
+          uploadArea.addEventListener(eventName, function() {
+            uploadArea.classList.add('dragover');
+          }, false);
         });
 
         ['dragleave', 'drop'].forEach(eventName => {
-          uploadArea.addEventListener(eventName, unhighlight, false);
+          uploadArea.addEventListener(eventName, function() {
+            uploadArea.classList.remove('dragover');
+          }, false);
         });
 
-        function highlight(e) {
-          uploadArea.classList.add('dragover');
-        }
-
-        function unhighlight(e) {
-          uploadArea.classList.remove('dragover');
-        }
-
-        uploadArea.addEventListener('drop', handleDrop, false);
-
-        function handleDrop(e) {
+        uploadArea.addEventListener('drop', function(e) {
           const dt = e.dataTransfer;
           const files = dt.files;
           
           if (files.length > 0) {
             const file = files[0];
-            fileInput.files = files; // Update the input
+            fileInput.files = files;
             handleFileSelect(file);
           }
-        }
+        }, false);
 
-        // Click to upload
         uploadArea.addEventListener('click', function() {
           fileInput.click();
         });
       }
 
-      // Remove screenshot
       if (removeBtn) {
         removeBtn.addEventListener('click', function() {
           selectedFile = null;
@@ -834,7 +580,6 @@
         });
       }
 
-      // Help link functionality
       const helpLink = document.getElementById('help-link');
       if (helpLink) {
         helpLink.addEventListener('click', function(e) {

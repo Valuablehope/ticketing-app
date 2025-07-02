@@ -2,29 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>HIS Portal Login</title>
-  
-  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-  
-  <!-- Supabase -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   
-  <!-- Base styles (required for all pages) -->
-    <link rel="stylesheet" href="css/base/variables.css">
-    <link rel="stylesheet" href="css/base/reset.css">
-    <link rel="stylesheet" href="css/base/utilities.css">
-    
-    <!-- Component styles -->
-    <link rel="stylesheet" href="css/components/buttons.css">
-    <link rel="stylesheet" href="css/components/forms.css">
-    
-    <!-- Page-specific styles -->
-    <link rel="stylesheet" href="css/pages/login.css">
-    
+  <link rel="stylesheet" href="css/base/variables.css">
+  <link rel="stylesheet" href="css/base/reset.css">
+  <link rel="stylesheet" href="css/base/utilities.css">
+  <link rel="stylesheet" href="css/components/buttons.css">
+  <link rel="stylesheet" href="css/components/forms.css">
+  <link rel="stylesheet" href="css/pages/login.css">
 </head>
+
 <body>
   <div class="login-container">
     <div class="logo-section">
@@ -37,195 +27,184 @@
       You have been signed out. Please log in again to continue.
     </div>
 
-    <form id="login-form">
+    <form id="loginForm">
       <div class="form-group">
         <label for="email">Email Address</label>
-        <input 
-          type="email" 
-          id="email" 
-          class="form-input" 
-          placeholder="Enter your email"
-          required 
-          autocomplete="email"
-        />
+        <input type="email" id="email" class="form-input" placeholder="Enter your email" 
+               required autocomplete="email"/>
       </div>
 
       <div class="form-group">
         <label for="password">Password</label>
         <div class="input-wrapper">
-          <input 
-            type="password" 
-            id="password" 
-            class="form-input" 
-            placeholder="Enter your password"
-            required 
-            autocomplete="current-password"
-          />
-          <button type="button" class="password-toggle" id="password-toggle">
-            👁️
-          </button>
+          <input type="password" id="password" class="form-input" placeholder="Enter your password" 
+                 required autocomplete="current-password"/>
+          <button type="button" class="password-toggle" id="passwordToggle">👁️</button>
         </div>
       </div>
 
-      <button type="submit" class="login-btn" id="login-btn">
-        <div class="btn-spinner" id="btn-spinner"></div>
-        <span id="btn-text">Sign In</span>
+      <button type="submit" class="login-btn" id="loginBtn">
+        <div class="btn-spinner" id="btnSpinner"></div>
+        <span id="btnText">Sign In</span>
       </button>
     </form>
 
     <div class="forgot-password">
-      <a href="#" id="forgot-password-link">Forgot your password?</a>
+      <a href="#" id="forgotLink">Forgot your password?</a>
     </div>
 
-    <a href="ticket-submission.html" class="back-btn">
-      ← Back to Ticket Portal
-    </a>
+    <a href="ticket-submission.html" class="back-btn">← Back to Ticket Portal</a>
 
-    <div id="error-message" class="error-message"></div>
-    <div id="success-message" class="success-message"></div>
+    <div id="errorMsg" class="error-message"></div>
+    <div id="successMsg" class="success-message"></div>
     
-    <div id="debug-info" class="debug-info">
+    <div id="debugInfo" class="debug-info">
       <strong>Debug Info:</strong>
-      <div id="debug-content">Initializing...</div>
+      <div id="debugContent">Initializing...</div>
     </div>
   </div>
 
   <script>
-    // Supabase configuration
-    const SUPABASE_URL = 'https://rkdblbnmtzyrapfemswq.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrZGJsYm5tdHp5cmFwZmVtc3dxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1ODQyNTgsImV4cCI6MjA2NjE2MDI1OH0.TY7Ml-S-knKMNQ-HKylGLbpXIu9wHqGAZDHHAq4rRJc';
-    
-    let supabaseClient;
-    let debugInfo = [];
+    // Config
+    const CONFIG = {
+      supabaseUrl: 'https://rkdblbnmtzyrapfemswq.supabase.co',
+      supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrZGJsYm5tdHp5cmFwZmVtc3dxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1ODQyNTgsImV4cCI6MjA2NjE2MDI1OH0.TY7Ml-S-knKMNQ-HKylGLbpXIu9wHqGAZDHHAq4rRJc'
+    };
 
-    // Initialize Supabase with proper error handling
-    function initializeSupabase() {
+    let supabase, debugInfo = [];
+
+    // Elements
+    const elements = {
+      form: document.getElementById('loginForm'),
+      email: document.getElementById('email'),
+      password: document.getElementById('password'),
+      loginBtn: document.getElementById('loginBtn'),
+      btnSpinner: document.getElementById('btnSpinner'),
+      btnText: document.getElementById('btnText'),
+      passwordToggle: document.getElementById('passwordToggle'),
+      forgotLink: document.getElementById('forgotLink'),
+      errorMsg: document.getElementById('errorMsg'),
+      successMsg: document.getElementById('successMsg'),
+      debugContent: document.getElementById('debugContent'),
+      logoutNotice: document.getElementById('logout-notice')
+    };
+
+    // Initialize Supabase
+    function initSupabase() {
       try {
-        // Check multiple possible Supabase global variables
-        let SupabaseLib;
+        const lib = window.supabase || window.Supabase || window.supa;
+        if (!lib?.createClient) throw new Error('Supabase library not found');
         
-        if (typeof window.supabase !== 'undefined') {
-          SupabaseLib = window.supabase;
-          debugInfo.push('✓ Found window.supabase');
-        } else if (typeof window.Supabase !== 'undefined') {
-          SupabaseLib = window.Supabase;
-          debugInfo.push('✓ Found window.Supabase');
-        } else if (typeof supabase !== 'undefined') {
-          SupabaseLib = supabase;
-          debugInfo.push('✓ Found global supabase');
-        } else {
-          const globals = Object.keys(window).filter(key => 
-            key.toLowerCase().includes('supabase') || key.toLowerCase().includes('supa')
-          );
-          debugInfo.push(`Available globals: ${globals.join(', ') || 'none found'}`);
-          throw new Error('Supabase library not found. Available globals: ' + globals.join(', '));
-        }
-        
-        // Initialize Supabase client
-        if (SupabaseLib && SupabaseLib.createClient) {
-          supabaseClient = SupabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        } else {
-          throw new Error('createClient method not found on Supabase object');
-        }
-        
-        if (!supabaseClient) {
-          throw new Error('Failed to create Supabase client');
-        }
-        
-        debugInfo.push('✓ Supabase client initialized');
+        supabase = lib.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
+        debugInfo.push('✓ Supabase initialized');
         return true;
       } catch (error) {
-        debugInfo.push(`✗ Supabase initialization failed: ${error.message}`);
-        
+        debugInfo.push(`✗ Init failed: ${error.message}`);
         return false;
       }
     }
 
-    // Update debug display
-    function updateDebugInfo() {
-      const debugContent = document.getElementById('debug-content');
-      debugContent.innerHTML = debugInfo.join('<br>');
-    }
-
-    // Clear any existing session on page load to ensure fresh login
-    async function clearExistingSession() {
-      if (!supabaseClient) return;
+    // Session management
+    async function handleSession() {
+      if (!supabase) return false;
       
       try {
-        // Check if there's an existing session
-        const { data: { session }, error } = await supabaseClient.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
+        const params = new URLSearchParams(window.location.search);
+        const logout = params.get('logout') === 'true';
+        const forceLogin = params.get('force_login') === 'true';
         
         if (session?.user) {
-          debugInfo.push('○ Found existing session, clearing...');
-          
-          // Check if this is an intentional logout (from URL parameter)
-          const urlParams = new URLSearchParams(window.location.search);
-          const logout = urlParams.get('logout');
-          const forceLogin = urlParams.get('force_login');
-          
-          if (logout === 'true' || forceLogin === 'true') {
-            // Sign out the existing session
-            await supabaseClient.auth.signOut();
-            debugInfo.push('✓ Session cleared due to logout/force_login parameter');
-            
-            // Show logout notice
-            if (logout === 'true') {
-              document.getElementById('logout-notice').style.display = 'block';
-            }
-            
-            // Clean the URL
+          if (logout || forceLogin) {
+            await supabase.auth.signOut();
+            debugInfo.push('✓ Session cleared');
+            if (logout) elements.logoutNotice.style.display = 'block';
             window.history.replaceState({}, document.title, window.location.pathname);
           } else {
-            // If user has valid session and no logout/force_login, redirect to portal
-            debugInfo.push('✓ Valid session found, redirecting to portal...');
+            debugInfo.push('✓ Valid session, redirecting...');
             window.location.href = 'portal.html';
-            return true; // Indicates redirect is happening
+            return true;
           }
-        } else {
-          debugInfo.push('○ No existing session found');
         }
-        
-        updateDebugInfo();
-        return false; // No redirect happening
+        return false;
       } catch (error) {
         debugInfo.push(`✗ Session check failed: ${error.message}`);
-        updateDebugInfo();
-        
         return false;
       }
     }
 
-    // DOM elements
-    const loginForm = document.getElementById('login-form');
-    const emailInput = document.getElementById('email');
-    const passwordInput = document.getElementById('password');
-    const loginBtn = document.getElementById('login-btn');
-    const btnSpinner = document.getElementById('btn-spinner');
-    const btnText = document.getElementById('btn-text');
-    const passwordToggle = document.getElementById('password-toggle');
-    const forgotPasswordLink = document.getElementById('forgot-password-link');
+    // Email confirmation
+    async function handleEmailConfirmation() {
+      if (!supabase) return;
+      
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token');
+      const type = params.get('type');
+      
+      if (token && type === 'email') {
+        try {
+          const { error } = await supabase.auth.verifyOtp({
+            token_hash: token,
+            type: 'email'
+          });
+          
+          if (error) {
+            showMessage(`Email confirmation failed: ${error.message}`, 'error');
+          } else {
+            showMessage('Email confirmed! You can now sign in.', 'success');
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+        } catch (error) {
+          debugInfo.push(`✗ Email confirmation error: ${error.message}`);
+        }
+      }
+    }
 
-    // Password visibility toggle
-    passwordToggle.addEventListener('click', () => {
-      const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-      passwordInput.setAttribute('type', type);
-      passwordToggle.textContent = type === 'password' ? '👁️' : '🙈';
+    // UI helpers
+    function updateDebug() {
+      elements.debugContent.innerHTML = debugInfo.join('<br>');
+    }
+
+    function setLoading(loading) {
+      elements.loginBtn.disabled = loading;
+      elements.btnSpinner.style.display = loading ? 'inline-block' : 'none';
+      elements.btnText.textContent = loading ? 'Signing in...' : 'Sign In';
+    }
+
+    function showMessage(message, type) {
+      const show = type === 'error' ? elements.errorMsg : elements.successMsg;
+      const hide = type === 'error' ? elements.successMsg : elements.errorMsg;
+      
+      hide.style.display = 'none';
+      show.textContent = message;
+      show.style.display = 'block';
+    }
+
+    function hideMessages() {
+      elements.errorMsg.style.display = 'none';
+      elements.successMsg.style.display = 'none';
+    }
+
+    // Event Listeners
+    elements.passwordToggle.addEventListener('click', () => {
+      const type = elements.password.type === 'password' ? 'text' : 'password';
+      elements.password.type = type;
+      elements.passwordToggle.textContent = type === 'password' ? '👁️' : '🙈';
     });
 
-    // Form submission
-    loginForm.addEventListener('submit', async (e) => {
+    elements.form.addEventListener('submit', async (e) => {
       e.preventDefault();
       
-      const email = emailInput.value.trim();
-      const password = passwordInput.value;
+      const email = elements.email.value.trim();
+      const password = elements.password.value;
 
       if (!email || !password) {
         showMessage('Please fill in all fields', 'error');
         return;
       }
 
-      if (!supabaseClient) {
-        showMessage('Authentication service not available. Please refresh the page.', 'error');
+      if (!supabase) {
+        showMessage('Service unavailable. Please refresh.', 'error');
         return;
       }
 
@@ -233,190 +212,75 @@
       hideMessages();
 
       try {
-        debugInfo.push(`Attempting login for: ${email}`);
-        updateDebugInfo();
-
-        const { data, error } = await supabaseClient.auth.signInWithPassword({
-          email: email,
-          password: password
-        });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
         if (error) {
-          debugInfo.push(`✗ Login error: ${error.message}`);
-          debugInfo.push(`Error code: ${error.status || 'unknown'}`);
-          updateDebugInfo();
-          
-          // Provide more specific error messages
-          let userMessage = error.message;
-          if (error.message.includes('Invalid login credentials')) {
-            userMessage = 'Invalid email or password. Please check your credentials and try again.';
-          } else if (error.message.includes('Email not confirmed')) {
-            userMessage = 'Please check your email and confirm your account before signing in.';
-          }
-          
-          showMessage(userMessage, 'error');
+          const msg = error.message.includes('Invalid login credentials') 
+            ? 'Invalid email or password'
+            : error.message;
+          showMessage(msg, 'error');
         } else if (data?.user && data?.session) {
-          debugInfo.push('✓ Login successful');
-          debugInfo.push(`User ID: ${data.user.id}`);
-          debugInfo.push(`Session: ${data.session.access_token ? 'Valid' : 'Invalid'}`);
-          updateDebugInfo();
-          
           showMessage('Login successful! Redirecting...', 'success');
-          
-          // Redirect after success with a slight delay
-          setTimeout(() => {
-            window.location.href = 'portal.html';
-          }, 1500);
+          setTimeout(() => window.location.href = 'portal.html', 1500);
         } else {
-          debugInfo.push('✗ Login failed - no user/session data returned');
-          updateDebugInfo();
           showMessage('Login failed. Please try again.', 'error');
         }
       } catch (error) {
-        debugInfo.push(`✗ Unexpected error: ${error.message}`);
-        updateDebugInfo();
-        showMessage('An unexpected error occurred. Please try again.', 'error');
-        
+        showMessage('An unexpected error occurred.', 'error');
       } finally {
         setLoading(false);
       }
     });
 
-    // Forgot password
-    forgotPasswordLink.addEventListener('click', async (e) => {
+    elements.forgotLink.addEventListener('click', async (e) => {
       e.preventDefault();
       
-      const email = emailInput.value.trim();
+      const email = elements.email.value.trim();
       if (!email) {
-        showMessage('Please enter your email address first', 'error');
-        emailInput.focus();
-        return;
-      }
-
-      if (!supabaseClient) {
-        showMessage('Authentication service not available. Please refresh the page.', 'error');
+        showMessage('Please enter your email first', 'error');
+        elements.email.focus();
         return;
       }
 
       try {
-        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-          redirectTo: window.location.origin + '/reset-password.html'
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password.html`
         });
         
         if (error) {
-          debugInfo.push(`✗ Password reset error: ${error.message}`);
-          updateDebugInfo();
-          showMessage('Failed to send reset email: ' + error.message, 'error');
+          showMessage(`Reset failed: ${error.message}`, 'error');
         } else {
-          debugInfo.push(`✓ Password reset email sent to: ${email}`);
-          updateDebugInfo();
-          showMessage('Password reset email sent! Check your inbox.', 'success');
+          showMessage('Reset email sent! Check your inbox.', 'success');
         }
       } catch (error) {
-        debugInfo.push(`✗ Password reset error: ${error.message}`);
-        updateDebugInfo();
         showMessage('Failed to send reset email', 'error');
-        
       }
     });
 
-    // Helper functions
-    function setLoading(loading) {
-      loginBtn.disabled = loading;
-      btnSpinner.style.display = loading ? 'inline-block' : 'none';
-      btnText.textContent = loading ? 'Signing in...' : 'Sign In';
-    }
-
-    function showMessage(message, type) {
-      const errorDiv = document.getElementById('error-message');
-      const successDiv = document.getElementById('success-message');
-      
-      if (type === 'error') {
-        errorDiv.textContent = message;
-        errorDiv.style.display = 'block';
-        successDiv.style.display = 'none';
-      } else {
-        successDiv.textContent = message;
-        successDiv.style.display = 'block';
-        errorDiv.style.display = 'none';
-      }
-    }
-
-    function hideMessages() {
-      document.getElementById('error-message').style.display = 'none';
-      document.getElementById('success-message').style.display = 'none';
-    }
-
-    // Handle email confirmation from URL
-    async function handleEmailConfirmation() {
-      if (!supabaseClient) return;
-      
-      try {
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
-        const type = urlParams.get('type');
-        
-        if (token && type === 'email') {
-          debugInfo.push('○ Email confirmation token detected');
-          updateDebugInfo();
-          
-          const { data, error } = await supabaseClient.auth.verifyOtp({
-            token_hash: token,
-            type: 'email'
-          });
-          
-          if (error) {
-            debugInfo.push(`✗ Email confirmation failed: ${error.message}`);
-            showMessage('Email confirmation failed: ' + error.message, 'error');
-          } else {
-            debugInfo.push('✓ Email confirmed successfully');
-            showMessage('Email confirmed successfully! You can now sign in.', 'success');
-            
-            // Clean the URL
-            window.history.replaceState({}, document.title, window.location.pathname);
-          }
-          
-          updateDebugInfo();
-        }
-      } catch (error) {
-        debugInfo.push(`✗ Email confirmation error: ${error.message}`);
-        updateDebugInfo();
-        
-      }
-    }
-
-    // Initialize everything when page loads
-    document.addEventListener('DOMContentLoaded', async () => {
-      // Wait for scripts to load
-      setTimeout(async () => {
-        // Initialize Supabase
-        const supabaseInitialized = initializeSupabase();
-        updateDebugInfo();
-        
-        if (supabaseInitialized) {
-          // Handle session and potential redirects
-          const isRedirecting = await clearExistingSession();
-          
-          if (!isRedirecting) {
-            // Handle email confirmation if present
-            await handleEmailConfirmation();
-            
-            // Auto-focus email input
-            emailInput.focus();
-          }
-        } else {
-          showMessage('Failed to initialize authentication service. Please refresh the page.', 'error');
-        }
-      }, 100);
-    });
-
-    // Enable debug mode with Ctrl+D
+    // Debug toggle
     document.addEventListener('keydown', (e) => {
       if (e.ctrlKey && e.key === 'd') {
         e.preventDefault();
-        const debugDiv = document.getElementById('debug-info');
-        debugDiv.style.display = debugDiv.style.display === 'none' ? 'block' : 'none';
+        const debug = document.getElementById('debugInfo');
+        debug.style.display = debug.style.display === 'none' ? 'block' : 'none';
       }
+    });
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', async () => {
+      setTimeout(async () => {
+        if (initSupabase()) {
+          updateDebug();
+          const redirecting = await handleSession();
+          if (!redirecting) {
+            await handleEmailConfirmation();
+            elements.email.focus();
+          }
+        } else {
+          showMessage('Failed to initialize. Please refresh.', 'error');
+        }
+        updateDebug();
+      }, 100);
     });
   </script>
 </body>
