@@ -113,6 +113,150 @@
   });
 })();
 
+// Optimized Telegram notification function with comprehensive debugging
+async function sendTelegramNotifications(formData, ticket) {
+  const TELEGRAM_ENDPOINT = "https://rkdblbnmtzyrapfemswq.functions.supabase.co/telegram-notify";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrZGJsYm5tdHp5cmFwZmVtc3dxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1ODQyNTgsImV4cCI6MjA2NjE2MDI1OH0.TY7Ml-S-knKMNQ-HKylGLbpXIu9wHqGAZDHHAq4rRJc";
+
+  const requestHeaders = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+  };
+
+  const results = {
+    submitter: { success: false, error: null, debugInfo: {} },
+    admin: { success: false, error: null, debugInfo: {} },
+  };
+
+  // Prepare notification payloads with debug info
+  const submitterPayload = {
+    email: formData.email,
+    title: formData.title,
+    status: "Open",
+    ticket_number: ticket.ticket_number,
+    description: formData.description,
+    type: "submit",
+  };
+
+  const adminPayload = {
+    email: formData.email, // This should be used for display only in admin notification
+    title: formData.title,
+    status: "Open",
+    ticket_number: ticket.ticket_number,
+    description: formData.description,
+    type: "admin_notify",
+    submitter_email: formData.email,
+  };
+
+  console.log("🔍 DEBUG: Starting dual notification process");
+  console.log("📧 Submitter email:", formData.email);
+  console.log("🎫 Ticket number:", ticket.ticket_number);
+  console.log("📤 Submitter payload:", JSON.stringify(submitterPayload, null, 2));
+  console.log("📤 Admin payload:", JSON.stringify(adminPayload, null, 2));
+
+  // Send notifications in parallel for better performance
+  const [submitterResult, adminResult] = await Promise.allSettled([
+    // Send notification to submitter
+    fetch(TELEGRAM_ENDPOINT, {
+      method: "POST",
+      headers: requestHeaders,
+      body: JSON.stringify(submitterPayload),
+    }),
+    // Send notification to admin
+    fetch(TELEGRAM_ENDPOINT, {
+      method: "POST",
+      headers: requestHeaders,
+      body: JSON.stringify(adminPayload),
+    }),
+  ]);
+
+  console.log("🔍 DEBUG: Parallel requests completed");
+  console.log("📊 Submitter result status:", submitterResult.status);
+  console.log("📊 Admin result status:", adminResult.status);
+
+  // Handle submitter notification result
+  if (submitterResult.status === "fulfilled") {
+    console.log("✅ Submitter request fulfilled, status:", submitterResult.value.status);
+    console.log("🔍 Submitter response headers:", Object.fromEntries(submitterResult.value.headers.entries()));
+    
+    if (submitterResult.value.ok) {
+      try {
+        const submitterData = await submitterResult.value.json();
+        console.log("✅ Submitter notification SUCCESS:", submitterData);
+        results.submitter.success = true;
+        results.submitter.debugInfo = {
+          status: submitterResult.value.status,
+          response: submitterData,
+        };
+      } catch (e) {
+        console.error("❌ Error parsing submitter response:", e);
+        results.submitter.error = "Response parsing error";
+        results.submitter.debugInfo = { parseError: e.message };
+      }
+    } else {
+      const errorText = await submitterResult.value.text().catch(() => "Could not read error");
+      console.error("❌ Submitter notification FAILED:", {
+        status: submitterResult.value.status,
+        statusText: submitterResult.value.statusText,
+        error: errorText
+      });
+      results.submitter.error = `HTTP ${submitterResult.value.status}: ${errorText}`;
+      results.submitter.debugInfo = {
+        status: submitterResult.value.status,
+        statusText: submitterResult.value.statusText,
+        error: errorText
+      };
+    }
+  } else {
+    console.error("❌ Submitter request REJECTED:", submitterResult.reason);
+    results.submitter.error = submitterResult.reason?.message || "Network error";
+    results.submitter.debugInfo = { networkError: submitterResult.reason };
+  }
+
+  // Handle admin notification result
+  if (adminResult.status === "fulfilled") {
+    console.log("✅ Admin request fulfilled, status:", adminResult.value.status);
+    console.log("🔍 Admin response headers:", Object.fromEntries(adminResult.value.headers.entries()));
+    
+    if (adminResult.value.ok) {
+      try {
+        const adminData = await adminResult.value.json();
+        console.log("✅ Admin notification SUCCESS:", adminData);
+        results.admin.success = true;
+        results.admin.debugInfo = {
+          status: adminResult.value.status,
+          response: adminData,
+        };
+      } catch (e) {
+        console.error("❌ Error parsing admin response:", e);
+        results.admin.error = "Response parsing error";
+        results.admin.debugInfo = { parseError: e.message };
+      }
+    } else {
+      const errorText = await adminResult.value.text().catch(() => "Could not read error");
+      console.error("❌ Admin notification FAILED:", {
+        status: adminResult.value.status,
+        statusText: adminResult.value.statusText,
+        error: errorText
+      });
+      results.admin.error = `HTTP ${adminResult.value.status}: ${errorText}`;
+      results.admin.debugInfo = {
+        status: adminResult.value.status,
+        statusText: adminResult.value.statusText,
+        error: errorText
+      };
+    }
+  } else {
+    console.error("❌ Admin request REJECTED:", adminResult.reason);
+    results.admin.error = adminResult.reason?.message || "Network error";
+    results.admin.debugInfo = { networkError: adminResult.reason };
+  }
+
+  console.log("🔍 DEBUG: Final notification results:", results);
+  return results;
+}
+
+// Optional email notification function (commented out but available)
 async function sendTicketEmailNotification(type, email, title, status) {
   try {
     const res = await fetch(
@@ -127,11 +271,14 @@ async function sendTicketEmailNotification(type, email, title, status) {
     if (!res.ok) {
       const errorText = await res.text();
       console.error("❌ Failed to send email:", errorText);
+      return false;
     } else {
       console.log("✅ Email notification sent");
+      return true;
     }
   } catch (error) {
     console.error("❌ Error sending email:", error);
+    return false;
   }
 }
 
@@ -151,7 +298,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const sessionData = JSON.parse(session);
       userEmail = sessionData.email || "";
     }
-  } catch (error) {}
+  } catch (error) {
+    console.warn("Could not retrieve user email from session:", error);
+  }
 
   // --- Element references ---
   const trackTab = document.getElementById("track-tab");
@@ -199,9 +348,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /**
-   * Show toast notification
+   * Show toast notification with auto-dismiss
    */
   function showToast(message, type = "info", title = null) {
+    if (!toastContainer) return;
+
     const toast = document.createElement("div");
     toast.className = `toast ${type}`;
 
@@ -283,6 +434,8 @@ document.addEventListener("DOMContentLoaded", () => {
    * Add loading state to button
    */
   function setButtonLoading(button, isLoading) {
+    if (!button) return;
+
     if (isLoading) {
       button.disabled = true;
       button.dataset.originalText = button.innerHTML;
@@ -338,9 +491,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (error) {
       if (uploadArea) {
         uploadArea.classList.add("error");
-        uploadArea.querySelector(".file-upload-text").textContent = error;
-        uploadArea.querySelector(".file-upload-hint").textContent =
-          "Please try again with a different file";
+        const uploadText = uploadArea.querySelector(".file-upload-text");
+        const uploadHint = uploadArea.querySelector(".file-upload-hint");
+        if (uploadText) uploadText.textContent = error;
+        if (uploadHint) uploadHint.textContent = "Please try again with a different file";
       }
       showToast(error, "error");
       return;
@@ -361,10 +515,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Update upload area
       if (uploadArea) {
-        uploadArea.querySelector(".file-upload-text").textContent =
-          "Screenshot selected";
-        uploadArea.querySelector(".file-upload-hint").textContent =
-          "Click to change or drag a different file";
+        const uploadText = uploadArea.querySelector(".file-upload-text");
+        const uploadHint = uploadArea.querySelector(".file-upload-hint");
+        if (uploadText) uploadText.textContent = "Screenshot selected";
+        if (uploadHint) uploadHint.textContent = "Click to change or drag a different file";
       }
     };
     reader.readAsDataURL(file);
@@ -431,14 +585,18 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- Tab Management ---
   function activateTab(tabName) {
     // Update tab states
-    trackTab.classList.toggle("active", tabName === "track");
-    submitTab.classList.toggle("active", tabName === "submit");
-    trackTab.setAttribute("aria-selected", tabName === "track");
-    submitTab.setAttribute("aria-selected", tabName === "submit");
+    if (trackTab) {
+      trackTab.classList.toggle("active", tabName === "track");
+      trackTab.setAttribute("aria-selected", tabName === "track");
+    }
+    if (submitTab) {
+      submitTab.classList.toggle("active", tabName === "submit");
+      submitTab.setAttribute("aria-selected", tabName === "submit");
+    }
 
     // Update section visibility
-    trackSection.classList.toggle("active", tabName === "track");
-    submitSection.classList.toggle("active", tabName === "submit");
+    if (trackSection) trackSection.classList.toggle("active", tabName === "track");
+    if (submitSection) submitSection.classList.toggle("active", tabName === "submit");
 
     // Clear results and hide loader
     clearResults();
@@ -449,16 +607,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Focus management for accessibility
     const activeSection = tabName === "track" ? trackSection : submitSection;
-    const firstInput = activeSection.querySelector("input, select, textarea");
-    if (firstInput) {
-      setTimeout(() => firstInput.focus(), 100);
+    if (activeSection) {
+      const firstInput = activeSection.querySelector("input, select, textarea");
+      if (firstInput) {
+        setTimeout(() => firstInput.focus(), 100);
+      }
     }
   }
 
   // Tab event listeners
   if (trackTab) trackTab.addEventListener("click", () => activateTab("track"));
-  if (submitTab)
-    submitTab.addEventListener("click", () => activateTab("submit"));
+  if (submitTab) submitTab.addEventListener("click", () => activateTab("submit"));
 
   // Handle deep linking
   function handleInitialTab() {
@@ -511,18 +670,10 @@ document.addEventListener("DOMContentLoaded", () => {
           .order("name"),
       ]);
 
-      if (basesError)
-        throw new Error(`Failed to load bases: ${basesError.message}`);
-      if (categoriesError)
-        throw new Error(
-          `Failed to load categories: ${categoriesError.message}`
-        );
-      if (departmentsError)
-        throw new Error(
-          `Failed to load departments: ${departmentsError.message}`
-        );
-      if (teamsError)
-        throw new Error(`Failed to load teams: ${teamsError.message}`);
+      if (basesError) throw new Error(`Failed to load bases: ${basesError.message}`);
+      if (categoriesError) throw new Error(`Failed to load categories: ${categoriesError.message}`);
+      if (departmentsError) throw new Error(`Failed to load departments: ${departmentsError.message}`);
+      if (teamsError) throw new Error(`Failed to load teams: ${teamsError.message}`);
 
       // Populate bases
       if (bases && baseSelect) {
@@ -564,6 +715,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       showToast("System data loaded successfully!", "success");
     } catch (error) {
+      console.error("Error loading lookup data:", error);
       showToast(`Error loading system data: ${error.message}`, "error");
     }
   }
@@ -573,6 +725,8 @@ document.addEventListener("DOMContentLoaded", () => {
     e.preventDefault();
 
     const ticketIdInput = document.getElementById("ticket-id");
+    if (!ticketIdInput) return;
+
     const ticketInput = ticketIdInput.value.trim();
 
     if (!ticketInput) {
@@ -581,7 +735,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const searchBtn = trackForm.querySelector(".search-btn");
+    const searchBtn = trackForm?.querySelector(".search-btn");
     setButtonLoading(searchBtn, true);
     showLoader();
     clearResults();
@@ -595,11 +749,7 @@ document.addEventListener("DOMContentLoaded", () => {
         `);
 
       // Check if input looks like a UUID or ticket number
-      if (
-        ticketInput.match(
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-        )
-      ) {
+      if (ticketInput.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
         query = query.eq("id", ticketInput);
       } else {
         query = query.eq("ticket_number", ticketInput.toUpperCase());
@@ -622,6 +772,8 @@ document.addEventListener("DOMContentLoaded", () => {
       displayTicketDetails(ticket, logs);
       showToast("Ticket found successfully!", "success");
     } catch (error) {
+      console.error("Error tracking ticket:", error);
+      
       if (resultContainer) {
         resultContainer.innerHTML = `
           <div class="result-card">
@@ -648,13 +800,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function displayTicketDetails(ticket, logs = []) {
     const baseName = basesMap[ticket.base_id] || "Unknown Base";
-    const categoryName =
-      categoriesMap[ticket.category_id] || "Unknown Category";
-
-    const assignedTo = ticket.assigned_to
-      ? "Assigned to support team"
-      : "Unassigned";
-
+    const categoryName = categoriesMap[ticket.category_id] || "Unknown Category";
+    const assignedTo = ticket.assigned_to ? "Assigned to support team" : "Unassigned";
     const createdDate = new Date(ticket.created_at);
     const updatedDate = new Date(ticket.updated_at);
 
@@ -695,9 +842,7 @@ document.addEventListener("DOMContentLoaded", () => {
               
               <div class="detail-item">
                 <label>Submitted By</label>
-                <p>${ticket.submitter_name}<br><small>${
-        ticket.submitter_email
-      }</small></p>
+                <p>${ticket.submitter_name}<br><small>${ticket.submitter_email}</small></p>
               </div>
               
               <div class="detail-item">
@@ -715,55 +860,33 @@ document.addEventListener("DOMContentLoaded", () => {
                 <p>${updatedDate.toLocaleDateString()} at ${updatedDate.toLocaleTimeString()}</p>
               </div>
               
-              ${
-                ticket.screenshot_url
-                  ? `
+              ${ticket.screenshot_url ? `
               <div class="detail-item full-width">
                 <label>Screenshot</label>
                 <div class="screenshot-display">
-                  <img src="${
-                    ticket.screenshot_url
-                  }" alt="Ticket screenshot" class="ticket-screenshot" onclick="window.open('${
-                      ticket.screenshot_url
-                    }', '_blank')" />
+                  <img src="${ticket.screenshot_url}" alt="Ticket screenshot" class="ticket-screenshot" onclick="window.open('${ticket.screenshot_url}', '_blank')" />
                   <p class="screenshot-hint">Click to view full size</p>
-                  ${
-                    ticket.screenshot_filename
-                      ? `<p class="screenshot-filename">${ticket.screenshot_filename}</p>`
-                      : ""
-                  }
+                  ${ticket.screenshot_filename ? `<p class="screenshot-filename">${ticket.screenshot_filename}</p>` : ""}
                 </div>
               </div>
-              `
-                  : ""
-              }
+              ` : ""}
             </div>
             
-            ${
-              logs && logs.length > 0
-                ? `
+            ${logs && logs.length > 0 ? `
               <div class="ticket-logs">
                 <h4>Recent Activity</h4>
                 <div class="logs-list">
-                  ${logs
-                    .map(
-                      (log) => `
+                  ${logs.map(log => `
                     <div class="log-item">
                       <div class="log-content">
                         <p>${log.action || "Status updated"}</p>
-                        <small>${new Date(
-                          log.created_at
-                        ).toLocaleString()}</small>
+                        <small>${new Date(log.created_at).toLocaleString()}</small>
                       </div>
                     </div>
-                  `
-                    )
-                    .join("")}
+                  `).join("")}
                 </div>
               </div>
-            `
-                : ""
-            }
+            ` : ""}
           </div>
         </div>
       `;
@@ -782,8 +905,7 @@ document.addEventListener("DOMContentLoaded", () => {
       category_id: categorySelect?.value || "",
       title: document.getElementById("ticket-title")?.value.trim() || "",
       description: document.getElementById("ticket-desc")?.value.trim() || "",
-      priority:
-        document.querySelector('input[name="priority"]:checked')?.value || "",
+      priority: document.querySelector('input[name="priority"]:checked')?.value || "",
     };
 
     // Validation
@@ -794,7 +916,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const submitBtn = submitForm?.querySelector(".submit-btn");
-    if (submitBtn) setButtonLoading(submitBtn, true);
+    setButtonLoading(submitBtn, true);
     showLoader();
     clearResults();
 
@@ -826,52 +948,46 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error(`Ticket creation failed: ${ticketError.message}`);
       }
 
-      // ✅ Send notification email
-      // await sendTicketEmailNotification(
-      //   "submit",
-      //   formData.email,
-      //   formData.title,
-      //   "Open"
-      // );
-
-      // In handleTicketSubmission function, fix the Telegram API call:
-      try {
-        const telegramRes = await fetch(
-          "https://rkdblbnmtzyrapfemswq.functions.supabase.co/telegram-notify",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization:
-                "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrZGJsYm5tdHp5cmFwZmVtc3dxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1ODQyNTgsImV4cCI6MjA2NjE2MDI1OH0.TY7Ml-S-knKMNQ-HKylGLbpXIu9wHqGAZDHHAq4rRJc",
-            },
-            body: JSON.stringify({
-              email: formData.email,
-              title: formData.title,
-              status: "Open",
-              type: "submit",
-              ticket_number: ticket.ticket_number,
-              description: formData.description,
-            }),
-          }
-        );
-
-        const result = await telegramRes.json();
-        if (!telegramRes.ok) {
-          console.warn("Telegram notify failed:", result.error || result);
-          showToast("Ticket saved, but Telegram notify failed.", "warning");
-        } else {
-          console.log("✅ Telegram notification sent");
-        }
-      } catch (err) {
-        console.error("Telegram fetch error:", err);
-        showToast("Could not send Telegram notification.", "error");
-      }
       console.log("✅ Ticket created:", ticket);
 
-      // --- Screenshot Handling ---
-      let screenshotData = null;
+      // Send dual Telegram notifications (submitter + admin)
+      console.log("🚀 Starting notification process...");
+      console.log("📋 Form data for notifications:", {
+        name: formData.name,
+        email: formData.email,
+        title: formData.title,
+        priority: formData.priority
+      });
+      
+      const notificationResults = await sendTelegramNotifications(formData, ticket);
+      
+      console.log("📊 Notification results received:", notificationResults);
+      
+      // Handle notification results
+      const submitterSuccess = notificationResults.submitter.success;
+      const adminSuccess = notificationResults.admin.success;
 
+      console.log("✅ Submitter notification success:", submitterSuccess);
+      console.log("✅ Admin notification success:", adminSuccess);
+
+      if (submitterSuccess && adminSuccess) {
+        console.log("🎉 All notifications sent successfully");
+        showToast("Ticket created and all notifications sent!", "success");
+      } else if (submitterSuccess || adminSuccess) {
+        const failedType = submitterSuccess ? "admin" : "submitter";
+        console.warn(`⚠️ Ticket created but ${failedType} notification failed`);
+        console.warn(`Failed ${failedType} error:`, 
+          failedType === "admin" ? notificationResults.admin.error : notificationResults.submitter.error);
+        showToast(`Ticket created. ${failedType} notification may have failed.`, "warning");
+      } else {
+        console.error("❌ Ticket created but all notifications failed");
+        console.error("Submitter error:", notificationResults.submitter.error);
+        console.error("Admin error:", notificationResults.admin.error);
+        showToast("Ticket created, but notifications failed to send.", "warning");
+      }
+
+      // Screenshot handling
+      let screenshotData = null;
       if (selectedFile) {
         try {
           if (uploadArea) uploadArea.classList.add("uploading");
@@ -891,57 +1007,36 @@ document.addEventListener("DOMContentLoaded", () => {
             .eq("id", ticket.id);
 
           if (updateError) {
-            console.error(
-              "❌ Failed to link screenshot to ticket:",
-              updateError
-            );
-            showToast(
-              "Screenshot uploaded but failed to link to ticket",
-              "warning"
-            );
+            console.error("❌ Failed to link screenshot to ticket:", updateError);
+            showToast("Screenshot uploaded but failed to link to ticket", "warning");
           } else {
             console.log("✅ Screenshot linked to ticket");
             showToast("Screenshot uploaded successfully!", "success");
           }
         } catch (screenshotError) {
           console.error("❌ Screenshot upload failed:", screenshotError);
-          showToast(
-            `Screenshot upload failed: ${screenshotError.message}`,
-            "error"
-          );
+          showToast(`Screenshot upload failed: ${screenshotError.message}`, "error");
         } finally {
           if (uploadArea) uploadArea.classList.remove("uploading");
         }
       }
 
-      // Display success result (remove manual logging since triggers handle it)
+      // Display success result
       displaySubmissionSuccess(
         ticket.ticket_number,
         ticket.id,
         formData,
-        screenshotData
+        screenshotData,
+        notificationResults
       );
 
       // Reset form
-      if (submitForm) submitForm.reset();
-      selectedFile = null;
-      if (previewContainer) previewContainer.classList.add("hidden");
-      if (uploadArea) {
-        uploadArea.classList.remove("error");
-        const uploadText = uploadArea.querySelector(".file-upload-text");
-        const uploadHint = uploadArea.querySelector(".file-upload-hint");
-        if (uploadText) uploadText.textContent = "Click to upload screenshot";
-        if (uploadHint)
-          uploadHint.textContent = "or drag and drop image file here";
-      }
-
-      // Clear priority selection
-      document.querySelectorAll('input[name="priority"]').forEach((radio) => {
-        radio.checked = false;
-      });
+      resetSubmissionForm();
 
       showToast("Ticket submitted successfully!", "success", "Success");
     } catch (error) {
+      console.error("❌ Ticket submission failed:", error);
+      
       if (resultContainer) {
         resultContainer.innerHTML = `
           <div class="result-card">
@@ -953,15 +1048,16 @@ document.addEventListener("DOMContentLoaded", () => {
               </svg>
               <h3>Submission Failed</h3>
               <p class="error-message">We couldn't submit your ticket at this time.</p>
+              <p class="error-help">Error: ${error.message}</p>
               <p class="error-help">Please try again or contact support if the problem persists.</p>
             </div>
           </div>
         `;
       }
 
-      showToast("Failed to submit ticket. Please try again.", "error");
+      showToast(`Failed to submit ticket: ${error.message}`, "error");
     } finally {
-      if (submitBtn) setButtonLoading(submitBtn, false);
+      setButtonLoading(submitBtn, false);
       hideLoader();
     }
   }
@@ -971,26 +1067,58 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!formData.name) errors.push("Please enter your full name");
     if (!formData.email) errors.push("Please enter your email address");
-    else if (!isValidEmail(formData.email))
-      errors.push("Please enter a valid email address");
+    else if (!isValidEmail(formData.email)) errors.push("Please enter a valid email address");
     if (!formData.base_id) errors.push("Please select your base/location");
     if (!formData.category_id) errors.push("Please select an issue category");
     if (!formData.title) errors.push("Please enter an issue title");
-    if (!formData.description)
-      errors.push("Please provide a detailed description");
+    if (!formData.description) errors.push("Please provide a detailed description");
     if (!formData.priority) errors.push("Please select a priority level");
 
     return errors;
   }
 
-  function displaySubmissionSuccess(
-    ticketNumber,
-    ticketId,
-    formData,
-    screenshotData
-  ) {
+  // Helper function to reset the submission form
+  function resetSubmissionForm() {
+    if (submitForm) submitForm.reset();
+    selectedFile = null;
+    if (previewContainer) previewContainer.classList.add("hidden");
+    if (uploadArea) {
+      uploadArea.classList.remove("error");
+      const uploadText = uploadArea.querySelector(".file-upload-text");
+      const uploadHint = uploadArea.querySelector(".file-upload-hint");
+      if (uploadText) uploadText.textContent = "Click to upload screenshot";
+      if (uploadHint) uploadHint.textContent = "or drag and drop image file here";
+    }
+
+    // Clear priority selection
+    document.querySelectorAll('input[name="priority"]').forEach((radio) => {
+      radio.checked = false;
+    });
+    
+    // Remove validation classes
+    document.querySelectorAll(".form-field input, .form-field textarea, .form-field select").forEach((field) => {
+      field.classList.remove("valid", "invalid");
+    });
+    
+    // Reset priority options
+    document.querySelectorAll(".priority-option").forEach((option) => {
+      option.classList.remove("selected");
+    });
+  }
+
+  // Enhanced success display with notification status
+  function displaySubmissionSuccess(ticketNumber, ticketId, formData, screenshotData, notificationResults) {
     const baseName = basesMap[formData.base_id] || "Unknown";
     const categoryName = categoriesMap[formData.category_id] || "Unknown";
+    
+    // Notification status indicators
+    const submitterNotification = notificationResults.submitter.success 
+      ? '<span class="notification-status success">✅ Telegram notification sent</span>'
+      : '<span class="notification-status warning">⚠️ Telegram notification failed</span>';
+      
+    const adminNotification = notificationResults.admin.success
+      ? '<span class="notification-status success">✅ Admin notified</span>'
+      : '<span class="notification-status warning">⚠️ Admin notification failed</span>';
 
     if (resultContainer) {
       resultContainer.innerHTML = `
@@ -1012,35 +1140,35 @@ document.addEventListener("DOMContentLoaded", () => {
               </button>
             </div>
             
+            <div class="notification-status-section">
+              <h4>Notification Status</h4>
+              <div class="notification-grid">
+                <div>${submitterNotification}</div>
+                <div>${adminNotification}</div>
+              </div>
+            </div>
+            
             <div class="submission-summary">
               <h4>Ticket Summary</h4>
               <div class="summary-grid">
                 <div><strong>Title:</strong> ${formData.title}</div>
-                <div><strong>Priority:</strong> ${getPriorityBadge(
-                  formData.priority
-                )}</div>
+                <div><strong>Priority:</strong> ${getPriorityBadge(formData.priority)}</div>
                 <div><strong>Base:</strong> ${baseName}</div>
                 <div><strong>Category:</strong> ${categoryName}</div>
-                ${
-                  screenshotData
-                    ? "<div><strong>Screenshot:</strong> ✅ Uploaded</div>"
-                    : ""
-                }
+                ${screenshotData ? "<div><strong>Screenshot:</strong> ✅ Uploaded</div>" : ""}
               </div>
             </div>
             
             <div class="next-steps">
               <h4>What's Next?</h4>
               <ul>
-                <li>Save your ticket ID for future reference</li>
-                <li>You'll receive email updates at ${formData.email}</li>
+                <li>Save your ticket ID: <strong>${ticketNumber}</strong></li>
+                ${notificationResults.submitter.success 
+                  ? `<li>Check your Telegram for confirmation message</li>` 
+                  : `<li>Email updates will be sent to ${formData.email}</li>`}
                 <li>Our support team will review your request within 24 hours</li>
                 <li>Use the "Track Ticket" tab to check status updates</li>
-                ${
-                  screenshotData
-                    ? "<li>Your screenshot has been attached to help our team understand the issue</li>"
-                    : ""
-                }
+                ${screenshotData ? "<li>Your screenshot has been attached to help our team understand the issue</li>" : ""}
               </ul>
             </div>
           </div>
@@ -1118,8 +1246,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const uploadText = uploadArea.querySelector(".file-upload-text");
         const uploadHint = uploadArea.querySelector(".file-upload-hint");
         if (uploadText) uploadText.textContent = "Click to upload screenshot";
-        if (uploadHint)
-          uploadHint.textContent = "or drag and drop image file here";
+        if (uploadHint) uploadHint.textContent = "or drag and drop image file here";
       }
       showToast("Screenshot removed", "info");
     });
@@ -1208,23 +1335,69 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      // Add some accessibility enhancements
+      // Add accessibility enhancements
       document.body.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
           // Close any open toasts
-          document
-            .querySelectorAll(".toast")
-            .forEach((toast) => toast.remove());
+          document.querySelectorAll(".toast").forEach((toast) => toast.remove());
         }
       });
     } catch (error) {
-      showToast(
-        "Failed to initialize application. Please refresh the page.",
-        "error"
-      );
+      console.error("Failed to initialize application:", error);
+      showToast("Failed to initialize application. Please refresh the page.", "error");
     }
   }
 
   // Start the application
   initializeApp();
 });
+
+// Add CSS for notification status (inject into page)
+const notificationStatusCSS = `
+.notification-status-section {
+  margin: 20px 0;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+.notification-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.notification-status {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.notification-status.success {
+  background: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.notification-status.warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+@media (min-width: 640px) {
+  .notification-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+`;
+
+// Inject CSS if not already present
+if (!document.getElementById('notification-status-styles')) {
+  const style = document.createElement('style');
+  style.id = 'notification-status-styles';
+  style.textContent = notificationStatusCSS;
+  document.head.appendChild(style);
+}
