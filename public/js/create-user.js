@@ -1,5 +1,4 @@
-// public/js/create-user.js - CLEANED WITH TOAST NOTIFICATIONS
-
+// === CREATE USER MODULE ===
 document.addEventListener('DOMContentLoaded', async () => {
   const SUPABASE_URL = 'https://rkdblbnmtzyrapfemswq.supabase.co';
   const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrZGJsYm5tdHp5cmFwZmVtc3dxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1ODQyNTgsImV4cCI6MjA2NjE2MDI1OH0.TY7Ml-S-knKMNQ-HKylGLbpXIu9wHqGAZDHHAq4rRJc';
@@ -7,8 +6,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let departments = [], teams = [], bases = [];
 
-  // Toast notification system
-  function showToast(message, type = 'info', title = '') {
+  // Toast system
+  const showToast = (message, type = 'info', title = '') => {
     const container = document.querySelector('.toast-container') || createToastContainer();
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
@@ -26,85 +25,68 @@ document.addEventListener('DOMContentLoaded', async () => {
         ${title ? `<div class="toast-title">${title}</div>` : ''}
         <div class="toast-message">${message}</div>
       </div>
-      <button class="toast-close" onclick="this.parentElement.remove()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <line x1="18" y1="6" x2="6" y2="18"/>
-          <line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button>
+      <button class="toast-close" onclick="this.parentElement.remove()">×</button>
       <div class="toast-progress" style="animation-duration: 5s"></div>
     `;
 
     container.appendChild(toast);
     setTimeout(() => toast.remove(), 5000);
-    return toast;
-  }
+  };
 
-  function createToastContainer() {
+  const createToastContainer = () => {
     const container = document.createElement('div');
     container.className = 'toast-container';
     document.body.appendChild(container);
     return container;
-  }
+  };
 
   // Populate dropdowns
-  async function populateDropdowns() {
+  const populateDropdowns = async () => {
     try {
-      // Load bases
-      const { data: basesData } = await supabaseClient.from('bases').select('id,name').order('name');
-      bases = basesData || [];
-      const baseSelect = document.getElementById('user-base');
-      baseSelect.innerHTML = '<option value="" disabled selected>Select Base</option>';
-      bases.forEach(b => {
-        const opt = document.createElement('option');
-        opt.value = b.id;
-        opt.textContent = b.name;
-        baseSelect.appendChild(opt);
-      });
+      const [basesData, departmentsData, teamsData] = await Promise.all([
+        supabaseClient.from('bases').select('id,name').order('name'),
+        supabaseClient.from('departments').select('id,name').order('name'),
+        supabaseClient.from('teams').select('id,name,department_id').order('name')
+      ]);
 
-      // Load departments
-      const { data: departmentsData } = await supabaseClient.from('departments').select('id, name').order('name');
-      departments = departmentsData || [];
-      const departmentSelect = document.getElementById('user-department');
-      departmentSelect.innerHTML = '<option value="" disabled selected>Select Department</option>';
-      departments.forEach(dept => {
-        const opt = document.createElement('option');
-        opt.value = dept.id;
-        opt.textContent = dept.name;
-        departmentSelect.appendChild(opt);
-      });
+      bases = basesData.data || [];
+      departments = departmentsData.data || [];
+      teams = teamsData.data || [];
 
-      // Load teams
-      const { data: teamsData } = await supabaseClient.from('teams').select('id, name, department_id').order('name');
-      teams = teamsData || [];
-      const teamSelect = document.getElementById('user-team');
-      teamSelect.innerHTML = '<option value="" disabled selected>Select Team</option>';
-      teams.forEach(team => {
-        const opt = document.createElement('option');
-        opt.value = team.id;
-        opt.textContent = team.name;
-        opt.setAttribute('data-department-id', team.department_id);
-        teamSelect.appendChild(opt);
-      });
+      const populateSelect = (id, data, placeholder) => {
+        const select = document.getElementById(id);
+        select.innerHTML = `<option value="" disabled selected>${placeholder}</option>`;
+        data.forEach(item => {
+          const option = document.createElement('option');
+          option.value = item.id;
+          option.textContent = item.name;
+          if (item.department_id) option.setAttribute('data-department-id', item.department_id);
+          select.appendChild(option);
+        });
+      };
+
+      populateSelect('user-base', bases, 'Select Base');
+      populateSelect('user-department', departments, 'Select Department');
+      populateSelect('user-team', teams, 'Select Team');
     } catch (err) {
       showToast('Failed to load dropdown data', 'error');
     }
-  }
+  };
 
-  // Handle department change to filter teams
+  // Department change handler
   document.getElementById('user-department').addEventListener('change', function() {
-    const selectedDepartmentId = this.value;
+    const departmentId = this.value;
     const teamSelect = document.getElementById('user-team');
     
     teamSelect.innerHTML = '<option value="" disabled selected>Select Team</option>';
     
-    if (selectedDepartmentId) {
-      const filteredTeams = teams.filter(team => team.department_id === selectedDepartmentId);
+    if (departmentId) {
+      const filteredTeams = teams.filter(team => team.department_id === departmentId);
       filteredTeams.forEach(team => {
-        const opt = document.createElement('option');
-        opt.value = team.id;
-        opt.textContent = team.name;
-        teamSelect.appendChild(opt);
+        const option = document.createElement('option');
+        option.value = team.id;
+        option.textContent = team.name;
+        teamSelect.appendChild(option);
       });
       teamSelect.disabled = false;
     } else {
@@ -112,129 +94,119 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Password strength indicator
+  // Password strength
   const passwordInput = document.getElementById('user-password');
   const strengthFill = document.querySelector('.strength-fill');
   const strengthText = document.querySelector('.strength-text');
 
-  function updatePasswordStrength(password) {
+  const updatePasswordStrength = (password) => {
     let strength = 0;
-    let message = 'Enter password';
-    
     if (password.length >= 6) strength += 25;
     if (password.length >= 8) strength += 25;
     if (/[A-Z]/.test(password)) strength += 25;
     if (/[0-9]/.test(password)) strength += 25;
     
-    if (strength === 0) message = 'Enter password';
-    else if (strength <= 25) message = 'Weak';
-    else if (strength <= 50) message = 'Fair';
-    else if (strength <= 75) message = 'Good';
-    else message = 'Strong';
+    const messages = ['Enter password', 'Weak', 'Fair', 'Good', 'Strong'];
+    const message = messages[Math.floor(strength / 25)];
     
     strengthFill.style.width = `${strength}%`;
     strengthText.textContent = message;
-  }
+  };
 
   passwordInput.addEventListener('input', (e) => updatePasswordStrength(e.target.value));
 
-  // Form submission handler
-  const form = document.getElementById('create-user-form');
-  form.addEventListener('submit', async (e) => {
+  // Form submission
+  document.getElementById('create-user-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-
-    const submitBtn = form.querySelector('button[type="submit"]');
+    
+    const submitBtn = e.target.querySelector('button[type="submit"]');
     submitBtn.classList.add('loading');
     submitBtn.disabled = true;
 
     try {
-      // Gather form data
-      const full_name = document.getElementById('full-name').value.trim();
-      const email = document.getElementById('user-email').value.trim();
-      const password = document.getElementById('user-password').value;
-      const roleRadio = document.querySelector('input[name="role"]:checked');
-      const role = roleRadio ? roleRadio.value : '';
-      const base = document.getElementById('user-base').value;
-      const departmentId = document.getElementById('user-department').value || null;
-      const teamId = document.getElementById('user-team').value || null;
+      const formData = {
+        full_name: document.getElementById('full-name').value.trim(),
+        email: document.getElementById('user-email').value.trim(),
+        password: document.getElementById('user-password').value,
+        role: document.querySelector('input[name="role"]:checked')?.value || '',
+        base: document.getElementById('user-base').value,
+        departmentId: document.getElementById('user-department').value || null,
+        teamId: document.getElementById('user-team').value || null
+      };
 
       // Validation
-      if (!full_name || !email || !password || !role || !base) {
+      if (!formData.full_name || !formData.email || !formData.password || !formData.role || !formData.base) {
         throw new Error('Please fill in all required fields.');
       }
-      if (password.length < 6) {
+      if (formData.password.length < 6) {
         throw new Error('Password must be at least 6 characters long.');
       }
 
-      // Get department and team names
-      const departmentName = departmentId ? departments.find(d => d.id === departmentId)?.name : null;
-      const teamName = teamId ? teams.find(t => t.id === teamId)?.name : null;
+      const departmentName = formData.departmentId ? departments.find(d => d.id === formData.departmentId)?.name : null;
+      const teamName = formData.teamId ? teams.find(t => t.id === formData.teamId)?.name : null;
 
-      // Create user account
+      // Create user
       const { data: signUpData, error: signUpError } = await supabaseClient.auth.signUp({
-        email,
-        password,
+        email: formData.email,
+        password: formData.password,
         options: {
-          data: { full_name, role, base, department_id: departmentId, team_id: teamId, department_name: departmentName, team_name: teamName }
+          data: { 
+            full_name: formData.full_name, 
+            role: formData.role, 
+            base: formData.base, 
+            department_id: formData.departmentId, 
+            team_id: formData.teamId, 
+            department_name: departmentName, 
+            team_name: teamName 
+          }
         }
       });
 
       if (signUpError) throw signUpError;
 
-      // Insert/update user in his_users table
+      // Save to his_users table
       if (signUpData.user) {
-        const selectedDepartment = departments.find(d => d.id === departmentId);
-        const selectedTeam = teams.find(t => t.id === teamId);
-        const selectedBase = bases.find(b => b.id === base);
+        const selectedBase = bases.find(b => b.id === formData.base);
+        const selectedDepartment = departments.find(d => d.id === formData.departmentId);
+        const selectedTeam = teams.find(t => t.id === formData.teamId);
 
-        const userData = {
+        const { error: upsertError } = await supabaseClient.from('his_users').upsert({
           id: signUpData.user.id,
-          full_name,
-          role,
+          full_name: formData.full_name,
+          role: formData.role,
           base: selectedBase?.name || null,
           department: selectedDepartment?.name || null,
           team: selectedTeam?.name || null,
-          department_id: departmentId,
-          team_id: teamId,
+          department_id: formData.departmentId,
+          team_id: formData.teamId,
           created_at: new Date().toISOString()
-        };
-
-        const { error: upsertError } = await supabaseClient
-          .from('his_users')
-          .upsert(userData, { onConflict: 'id' });
+        }, { onConflict: 'id' });
 
         if (upsertError) console.error('User data save error:', upsertError);
       }
 
-      // Show success message
       const message = signUpData.user && !signUpData.session ? 
-        `Account created for "${full_name}"! Please check email for verification link.` :
-        `User "${full_name}" created successfully!`;
+        `Account created for "${formData.full_name}"! Please check email for verification link.` :
+        `User "${formData.full_name}" created successfully!`;
       
       showToast(message, 'success', 'User Created');
-
+      
       // Reset form
-      form.reset();
-      document.getElementById('user-base').selectedIndex = 0;
-      document.getElementById('user-department').selectedIndex = 0;
-      document.getElementById('user-team').innerHTML = '<option value="" disabled selected>Select Team</option>';
+      e.target.reset();
       document.getElementById('user-team').disabled = true;
       updatePasswordStrength('');
-
+      
     } catch (err) {
-      // Handle errors
-      let errorMessage = '';
-      if (err.message.includes('already registered')) {
-        errorMessage = 'This email is already registered. Try using a different email address.';
-      } else if (err.message.includes('invalid email')) {
-        errorMessage = 'Please enter a valid email address.';
-      } else if (err.message.includes('password')) {
-        errorMessage = 'Password does not meet requirements.';
-      } else if (err.message.includes('duplicate key')) {
-        errorMessage = 'This user account already exists. Try logging in instead.';
-      } else {
-        errorMessage = err.message || 'An error occurred while creating the user.';
-      }
+      const errorMessages = {
+        'already registered': 'This email is already registered. Try using a different email address.',
+        'invalid email': 'Please enter a valid email address.',
+        'password': 'Password does not meet requirements.',
+        'duplicate key': 'This user account already exists. Try logging in instead.'
+      };
+      
+      const errorMessage = Object.keys(errorMessages).find(key => err.message.includes(key)) 
+        ? errorMessages[Object.keys(errorMessages).find(key => err.message.includes(key))]
+        : err.message || 'An error occurred while creating the user.';
       
       showToast(errorMessage, 'error', 'Creation Failed');
     } finally {
@@ -243,56 +215,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Enhanced form interactions
-  const inputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="password"]');
-  inputs.forEach(input => {
-    if (input.value.trim() !== '') input.classList.add('has-value');
+  // Form enhancements
+  document.querySelectorAll('input[type="text"], input[type="email"], input[type="password"]').forEach(input => {
+    if (input.value.trim()) input.classList.add('has-value');
     
     input.addEventListener('blur', () => {
-      if (input.value.trim() !== '') {
-        input.classList.add('has-value');
-      } else {
-        input.classList.remove('has-value');
-      }
+      input.classList.toggle('has-value', input.value.trim() !== '');
+      const isValid = input.checkValidity();
+      input.classList.toggle('valid', isValid && input.value.trim());
+      input.classList.toggle('invalid', !isValid && input.value.trim());
     });
   });
 
-  // Role selection enhancements
-  const roleOptions = document.querySelectorAll('.role-option');
-  roleOptions.forEach(option => {
-    const radio = option.querySelector('input[type="radio"]');
-    
+  // Role selection
+  document.querySelectorAll('.role-option').forEach(option => {
     option.addEventListener('click', () => {
-      roleOptions.forEach(opt => opt.classList.remove('active'));
+      document.querySelectorAll('.role-option').forEach(opt => opt.classList.remove('active'));
       option.classList.add('active');
-      radio.checked = true;
+      option.querySelector('input[type="radio"]').checked = true;
     });
   });
 
-  // Form validation
-  const requiredInputs = form.querySelectorAll('input[required], select[required]');
-  requiredInputs.forEach(input => {
-    input.addEventListener('blur', validateField);
-    input.addEventListener('input', validateField);
-  });
-
-  function validateField(e) {
-    const field = e.target;
-    const isValid = field.checkValidity();
-    
-    if (field.value.trim() !== '') {
-      if (isValid) {
-        field.classList.remove('invalid');
-        field.classList.add('valid');
-      } else {
-        field.classList.remove('valid');
-        field.classList.add('invalid');
-      }
-    } else {
-      field.classList.remove('valid', 'invalid');
-    }
-  }
-
-  // Initialize
   await populateDropdowns();
 });

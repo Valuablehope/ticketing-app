@@ -36,80 +36,40 @@
     .ticket-screenshot{max-width:300px;max-height:200px;border-radius:var(--radius-sm);border:1px solid var(--border);cursor:pointer;transition:var(--transition);object-fit:cover}
     .ticket-screenshot:hover{box-shadow:var(--shadow-lg);transform:scale(1.02)}
     .screenshot-hint{font-size:var(--font-size-xs);color:var(--text-light);margin-top:0.5rem;font-style:italic}
+    .screenshot-filename{font-size:var(--font-size-xs);color:var(--text-light);margin-top:0.25rem}
     .detail-item.full-width{grid-column:1/-1}
     .copy-btn{background:none;border:none;color:var(--accent);cursor:pointer;padding:0.25rem;border-radius:var(--radius-sm);transition:var(--transition);display:inline-flex;align-items:center;margin-left:0.5rem}
     .copy-btn:hover{background:rgba(79,70,229,0.1)}
     .copy-btn svg{width:16px;height:16px;stroke-width:2}
+    .character-counter{font-size:var(--font-size-xs);color:var(--text-light);text-align:right;margin-top:0.25rem}
+    .dragover{border-color:var(--accent);background:rgba(79,70,229,0.1)}
+    .toast-container{position:fixed;top:20px;right:20px;z-index:1000;pointer-events:none}
+    .toast{display:flex;align-items:center;gap:12px;background:white;border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;margin-bottom:12px;box-shadow:var(--shadow-lg);max-width:400px;pointer-events:auto;animation:toastSlideIn 0.3s ease-out}
+    .toast.success{border-color:var(--success);background:var(--success-light)}
+    .toast.error{border-color:var(--error);background:var(--error-light)}
+    .toast.warning{border-color:var(--warning);background:var(--warning-light)}
+    .toast.info{border-color:var(--info);background:var(--info-light)}
+    .toast-icon{width:20px;height:20px;flex-shrink:0}
+    .toast.success .toast-icon{color:var(--success)}
+    .toast.error .toast-icon{color:var(--error)}
+    .toast.warning .toast-icon{color:var(--warning)}
+    .toast.info .toast-icon{color:var(--info)}
+    .toast-content h4{margin:0 0 4px 0;font-size:var(--font-size-sm);font-weight:600}
+    .toast-content p{margin:0;font-size:var(--font-size-sm)}
+    @keyframes toastSlideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+    @keyframes toastSlideOut{from{transform:translateX(0);opacity:1}to{transform:translateX(100%);opacity:0}}
     @keyframes spin{to{transform:rotate(360deg)}}
-    @media(max-width:480px){.preview-content{flex-direction:column;align-items:flex-start;gap:0.75rem}.preview-image{max-width:100%;max-height:120px}.ticket-screenshot{max-width:100%;max-height:150px}}
+    @media(max-width:480px){.preview-content{flex-direction:column;align-items:flex-start;gap:0.75rem}.preview-image{max-width:100%;max-height:120px}.ticket-screenshot{max-width:100%;max-height:150px}.toast-container{left:20px;right:20px}.toast{max-width:none}}
   </style>
-  
-  <script>
-    (function() {
-      'use strict';
-      
-      function isValidSession() {
-        try {
-          const session = sessionStorage.getItem('ticketing_session');
-          const signature = sessionStorage.getItem('session_signature');
-          
-          if (!session || !signature) return false;
-          
-          const sessionData = JSON.parse(session);
-          
-          if (!sessionData.expiration || sessionData.expiration <= Date.now()) return false;
-          if (!sessionData.verified || !sessionData.token) return false;
-          
-          try {
-            const signatureData = JSON.parse(atob(signature));
-            if (!signatureData.token || signatureData.token !== sessionData.token) return false;
-            if (Date.now() - signatureData.timestamp > 60 * 60 * 1000) return false;
-          } catch (e) {
-            return false;
-          }
-          
-          return true;
-        } catch (error) {
-          return false;
-        }
-      }
-      
-      if (!isValidSession()) {
-        sessionStorage.removeItem('ticketing_session');
-        sessionStorage.removeItem('session_signature');
-        window.location.replace('../index.html');
-        
-        document.addEventListener('DOMContentLoaded', function(e) {
-          e.stopImmediatePropagation();
-        }, true);
-        
-        document.addEventListener('readystatechange', function() {
-          if (document.readyState === 'interactive' || document.readyState === 'complete') {
-            document.body.innerHTML = `
-              <div class="redirect-container">
-                <div class="redirect-card">
-                  <div class="redirect-content">
-                    <svg class="redirect-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="M12 2L2 7v10c0 5.55 3.84 10 9 10s9-4.45 9-10V7L12 2z"/>
-                      <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
-                    </svg>
-                    <h2>Redirecting...</h2>
-                    <p>Please verify your email address first.</p>
-                    <div class="redirect-loader">
-                      <div class="loader-spinner"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            `;
-          }
-        });
-      }
-    })();
-  </script>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js" defer></script>
-  <script src="js/ticket-submission.js" defer></script>
+  <!-- Load Supabase first -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
+  
+  <!-- Load security and notifications module -->
+  <script src="js/security-notifications.js"></script>
+  
+  <!-- Load main application module -->
+  <script src="js/ticket-app.js"></script>
 </head>
 <body>
   <div class="main-container">
@@ -422,29 +382,6 @@
         });
       }
 
-      // Tab functionality
-      const trackTab = document.getElementById('track-tab');
-      const submitTab = document.getElementById('submit-tab');
-      const trackSection = document.getElementById('track-section');
-      const submitSection = document.getElementById('submit-section');
-
-      function switchToTab(activeTab, activeSection, inactiveTab, inactiveSection) {
-        activeTab.classList.add('active');
-        activeTab.setAttribute('aria-selected', 'true');
-        inactiveTab.classList.remove('active');
-        inactiveTab.setAttribute('aria-selected', 'false');
-        activeSection.classList.add('active');
-        inactiveSection.classList.remove('active');
-      }
-
-      trackTab.addEventListener('click', function() {
-        switchToTab(trackTab, trackSection, submitTab, submitSection);
-      });
-
-      submitTab.addEventListener('click', function() {
-        switchToTab(submitTab, submitSection, trackTab, trackSection);
-      });
-
       // Form reset functionality
       const resetBtn = document.getElementById('reset-form');
       const submitForm = document.getElementById('submit-form');
@@ -461,122 +398,11 @@
               uploadArea.querySelector('.file-upload-text').textContent = 'Click to upload screenshot';
               uploadArea.querySelector('.file-upload-hint').textContent = 'or drag and drop image file here';
             }
+            // Reset priority options
+            document.querySelectorAll('.priority-option').forEach(option => {
+              option.classList.remove('selected');
+            });
           }
-        });
-      }
-
-      // Screenshot upload functionality
-      const fileInput = document.getElementById('screenshot-upload');
-      const uploadArea = document.getElementById('upload-area');
-      const previewContainer = document.getElementById('screenshot-preview');
-      const previewImage = document.getElementById('preview-image');
-      const fileName = document.getElementById('file-name');
-      const fileSize = document.getElementById('file-size');
-      const removeBtn = document.getElementById('remove-screenshot');
-
-      let selectedFile = null;
-
-      function validateFile(file) {
-        const maxSize = 5 * 1024 * 1024;
-        const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
-        
-        if (!allowedTypes.includes(file.type)) {
-          return 'Please select a valid image file (PNG, JPG, GIF)';
-        }
-        
-        if (file.size > maxSize) {
-          return 'File size must be less than 5MB';
-        }
-        
-        return null;
-      }
-
-      function formatFileSize(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024, sizes = ['Bytes', 'KB', 'MB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-      }
-
-      function handleFileSelect(file) {
-        const error = validateFile(file);
-        
-        if (error) {
-          uploadArea.classList.add('error');
-          uploadArea.querySelector('.file-upload-text').textContent = error;
-          uploadArea.querySelector('.file-upload-hint').textContent = 'Please try again with a different file';
-          return;
-        }
-
-        uploadArea.classList.remove('error');
-        selectedFile = file;
-        
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          previewImage.src = e.target.result;
-          fileName.textContent = file.name;
-          fileSize.textContent = formatFileSize(file.size);
-          previewContainer.classList.remove('hidden');
-          
-          uploadArea.querySelector('.file-upload-text').textContent = 'Screenshot selected';
-          uploadArea.querySelector('.file-upload-hint').textContent = 'Click to change or drag a different file';
-        };
-        reader.readAsDataURL(file);
-      }
-
-      if (fileInput) {
-        fileInput.addEventListener('change', function(e) {
-          const file = e.target.files[0];
-          if (file) {
-            handleFileSelect(file);
-          }
-        });
-      }
-
-      if (uploadArea) {
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-          uploadArea.addEventListener(eventName, function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-          }, false);
-        });
-
-        ['dragenter', 'dragover'].forEach(eventName => {
-          uploadArea.addEventListener(eventName, function() {
-            uploadArea.classList.add('dragover');
-          }, false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-          uploadArea.addEventListener(eventName, function() {
-            uploadArea.classList.remove('dragover');
-          }, false);
-        });
-
-        uploadArea.addEventListener('drop', function(e) {
-          const dt = e.dataTransfer;
-          const files = dt.files;
-          
-          if (files.length > 0) {
-            const file = files[0];
-            fileInput.files = files;
-            handleFileSelect(file);
-          }
-        }, false);
-
-        uploadArea.addEventListener('click', function() {
-          fileInput.click();
-        });
-      }
-
-      if (removeBtn) {
-        removeBtn.addEventListener('click', function() {
-          selectedFile = null;
-          fileInput.value = '';
-          previewContainer.classList.add('hidden');
-          uploadArea.classList.remove('error');
-          uploadArea.querySelector('.file-upload-text').textContent = 'Click to upload screenshot';
-          uploadArea.querySelector('.file-upload-hint').textContent = 'or drag and drop image file here';
         });
       }
 
