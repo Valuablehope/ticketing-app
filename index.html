@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="./public/css/pages/index.css">
   
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="./public/js/config.js"></script>
   
   <style>
     body { opacity: 0; transition: opacity 0.3s ease; }
@@ -67,15 +68,16 @@
 
   <script>
     // Config
-    const CONFIG = {
-      supabaseUrl: 'https://rkdblbnmtzyrapfemswq.supabase.co',
-      supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrZGJsYm5tdHp5cmFwZmVtc3dxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1ODQyNTgsImV4cCI6MjA2NjE2MDI1OH0.TY7Ml-S-knKMNQ-HKylGLbpXIu9wHqGAZDHHAq4rRJc',
-      sessionDuration: 30 * 60 * 1000,
-      redirectUrl: 'public/ticket-submission.html'
-    };
+      const CONFIG = {
+        sessionDuration: 30 * 60 * 1000,
+        redirectUrl: 'public/ticket-submission.html'
+      };
 
     // Initialize
-    const supabase = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
+      const supabase = window.supabase.createClient(
+        window.SUPABASE_CONFIG.url,
+        window.SUPABASE_CONFIG.anonKey
+      );
     const elements = {
       form: document.getElementById('loginForm'),
       email: document.getElementById('email'),

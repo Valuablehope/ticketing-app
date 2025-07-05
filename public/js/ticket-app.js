@@ -1,9 +1,8 @@
 // === TICKET APPLICATION MODULE ===
 document.addEventListener("DOMContentLoaded", () => {
   // Initialize
-  const SUPABASE_URL = "https://rkdblbnmtzyrapfemswq.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrZGJsYm5tdHp5cmFwZmVtc3dxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1ODQyNTgsImV4cCI6MjA2NjE2MDI1OH0.TY7Ml-S-knKMNQ-HKylGLbpXIu9wHqGAZDHHAq4rRJc";
-  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const { url, anonKey } = window.SUPABASE_CONFIG || {};
+  const supabaseClient = supabase.createClient(url, anonKey);
 
   // Get user email from session
   let userEmail = "";
